@@ -13,7 +13,7 @@
 - `airflow/dags/`：知识入库DAG，调用kb-svc和ai-svc
 - `Makefile`：一键启动/测试/依赖管理
 - `tests/`：单元测试，默认内存实现
- - `docs/chat/`：聊天会话记录与复盘
+ - `docs/chat/`：文档与指南
 
 ## 快速开始（使用 mise）
 
@@ -45,6 +45,7 @@ mise run test
 | `GET /health` | 存活探针（进程存活立即 200） |
 | `GET /ready` | 就绪探针（若 ES 后端初始化失败可返回 503） |
 | `GET /metrics` | Prometheus 指标（Hertz + 进程级） |
+| `GET /metrics/domain` | 域内指标细分（业务维度采样） |
 | `GET /v1/kb/info` | 知识库后端与 analyzer 模式（memory / es + ik|ngram|standard） |
 | `GET /v1/search?q=...&limit=10` | 知识检索，limit 默认 10，上限 50 |
 
@@ -84,33 +85,33 @@ curl -X PUT http://localhost:8081/v1/tickets/{id}/resolve
 curl -X PUT http://localhost:8081/v1/tickets/{id}/reopen
 ```
 
-示例响应（摘录）：
+示例响应（摘录，字段已统一 snake_case）：
 
 ```json
 {
-  "ID": "...",
-  "Status": "created",
-  "CurrentCycle": 1,
-  "Cycles": [
-    { "Status": "resolved", "CreatedAt": 1694500000, "AssignedAt": 1694500100, "ResolvedAt": 1694500200 },
-    { "Status": "created",  "CreatedAt": 1694500300 }
+  "id": "...",
+  "status": "created",
+  "current_cycle": 1,
+  "cycles": [
+    { "status": "resolved", "created_at": 1694500000, "assigned_at": 1694500100, "resolved_at": 1694500200 },
+    { "status": "created",  "created_at": 1694500300 }
   ],
-  "Events": [
-    { "Type": "created",  "At": 1694500000 },
-    { "Type": "assigned", "At": 1694500100 },
-    { "Type": "escalated","At": 1694500150 },
-    { "Type": "resolved", "At": 1694500200 },
-    { "Type": "reopened", "At": 1694500300 }
+  "events": [
+    { "type": "created",  "at": 1694500000 },
+    { "type": "assigned", "at": 1694500100 },
+    { "type": "escalated","at": 1694500150 },
+    { "type": "resolved", "at": 1694500200 },
+    { "type": "reopened", "at": 1694500300 }
   ]
 }
 ```
-- Gateway 知识库
+- Gateway 知识库（通过 Gateway 暴露）
 ```sh
-curl -X POST http://localhost:8082/v1/docs -d '{"title":"FAQ","content":"..."}' -H 'Content-Type: application/json'
+curl -X POST http://localhost:8081/v1/docs -d '{"title":"FAQ","content":"..."}' -H 'Content-Type: application/json'
 ```
 - Gateway AI（Embeddings）
 ```sh
-curl -X POST http://localhost:8083/v1/embeddings -d '{"texts":["客服是什么？"]}' -H 'Content-Type: application/json'
+curl -X POST http://localhost:8081/v1/embeddings -d '{"texts":["客服是什么？"]}' -H 'Content-Type: application/json'
 ```
 
 ## eino集成说明
@@ -140,8 +141,42 @@ curl -X POST http://localhost:8083/v1/embeddings -d '{"texts":["客服是什么�
 core: cloudwego/hertz, google/uuid, stretchr/testify
 可选 / 规划：elastic/go-elasticsearch, cloudwego/eino, zap
 
-## 会话记录
-最新会话记录：`docs/chat/2025-09-12-session-02.md`
+## 文档与指南
+- 总览与目录：`docs/chat/README.md`
+- 检索与 ES 运维：见 `docs/chat/guides/`
+
+## Elasticsearch 后端快速验证（可选）
+
+前置：本地可用 Docker；默认使用内存 KB，可切换到 ES 后端验证分词与补全。
+
+1) 启动 ES（脚本已内置）
+```sh
+mise run es-up     # 拉起本地 ES（含必要配置）
+```
+
+2) 以 ES 后端启动 Gateway（具体命令以项目脚本为准）
+```sh
+mise run run-ticket-es
+# 或手动设置环境变量：KB_BACKEND=es ES_ADDRS=http://localhost:9200
+```
+
+3) 健康检查与后端信息
+```sh
+curl http://localhost:8081/ready
+curl http://localhost:8081/v1/kb/info   # 期望 backend=es，analyzer=ik 或 ngram（fallback）
+```
+
+4) 写入与搜索验证（含短查询自动补全）
+```sh
+curl -X POST http://localhost:8081/v1/docs -H 'Content-Type: application/json' \
+  -d '{"title":"安装指南","content":"完整安装操作步骤"}'
+curl "http://localhost:8081/v1/search?q=安装&limit=5"   # 短查询应能命中（IK 可用或 ngram 回退 + edge_ngram 自动补全）
+```
+
+5) 关闭 ES（需要时）
+```sh
+mise run es-down
+```
 
 ## 代码生成（Kitex）
 
