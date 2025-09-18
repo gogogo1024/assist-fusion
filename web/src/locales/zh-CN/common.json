@@ -1,0 +1,81 @@
+{
+  "nav": {
+    "agent": "坐席",
+    "supervisor": "主管",
+    "kb": "知识库",
+    "diag": "诊断"
+  },
+  "actions": {
+    "refresh": "刷新",
+    "assign": "指派",
+    "start": "开始",
+    "wait": "等待",
+    "escalate": "升级",
+    "resolve": "解决",
+    "close": "关闭",
+    "cancel": "取消",
+    "reopen": "重开",
+    "create": "创建",
+    "add": "新增",
+    "update": "更新",
+    "delete": "删除",
+    "search": "搜索",
+    "backendInfo": "后端信息",
+    "checkReady": "检查 /ready",
+    "viewMetrics": "查看 /metrics/domain"
+  },
+  "guide": {
+    "agent": {
+      "hint": "在下方列表中选择一个工单，或在上方创建新工单",
+      "current": "当前工单：{{id}}"
+    },
+    "supervisor": {
+      "hint": "可在此查看未分配与逾期工单，支持直接指派"
+    },
+    "empty": {
+      "tickets": "暂无工单，可前往“坐席”页创建"
+    }
+  },
+  "fields": {
+    "id": "ID",
+    "title": "标题",
+    "desc": "描述",
+    "status": "状态",
+    "assignee": "指派人",
+    "note": "备注（可选）",
+    "ticketId": "工单ID",
+    "docId": "文档ID",
+    "content": "内容",
+    "query": "搜索关键字",
+    "dueAt": "截止"
+  },
+  "agent": {
+    "heading": "坐席（简版）",
+    "demoTitle": "演示工单",
+    "demoDesc": "这是一个示例描述",
+    "selectTicketFirst": "请先选择工单",
+    "illegalTransition": "当前状态({{state}})不允许执行 {{action}}"
+  },
+  "supervisor": {
+    "unassigned": "未分配",
+    "overdue": "逾期"
+  },
+  "columns": {
+    "operations": "操作"
+  },
+  "common": {
+    "loading": "加载中…",
+    "empty": "暂无数据"
+  },
+  "stats": {
+    "total": "总数",
+    "created": "已创建",
+    "assigned": "已指派",
+    "in_progress": "进行中",
+    "waiting": "等待中",
+    "escalated": "已升级",
+    "resolved": "已解决",
+    "closed": "已关闭",
+    "canceled": "已取消"
+  }
+}

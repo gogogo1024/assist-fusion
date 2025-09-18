@@ -1,0 +1,81 @@
+{
+  "nav": {
+    "agent": "Agent",
+    "supervisor": "Supervisor",
+    "kb": "Knowledge Base",
+    "diag": "Diagnostics"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "assign": "Assign",
+    "start": "Start",
+    "wait": "Wait",
+    "escalate": "Escalate",
+    "resolve": "Resolve",
+    "close": "Close",
+    "cancel": "Cancel",
+    "reopen": "Reopen",
+    "create": "Create",
+    "add": "Add",
+    "update": "Update",
+    "delete": "Delete",
+    "search": "Search",
+    "backendInfo": "Backend Info",
+    "checkReady": "Check /ready",
+    "viewMetrics": "View /metrics/domain"
+  },
+  "guide": {
+    "agent": {
+      "hint": "Select a ticket from the list below, or create a new one above",
+      "current": "Current ticket: {{id}}"
+    },
+    "supervisor": {
+      "hint": "Review unassigned and overdue tickets here, assign directly"
+    },
+    "empty": {
+      "tickets": "No tickets yet. Go to Agent to create one"
+    }
+  },
+  "fields": {
+    "id": "ID",
+    "title": "Title",
+    "desc": "Description",
+    "status": "Status",
+    "assignee": "Assignee",
+    "note": "Note (optional)",
+    "ticketId": "Ticket ID",
+    "docId": "Doc ID",
+    "content": "Content",
+    "query": "Search keyword",
+    "dueAt": "Due"
+  },
+  "agent": {
+    "heading": "Agent (Lite)",
+    "demoTitle": "Demo Ticket",
+    "demoDesc": "This is a demo description",
+    "selectTicketFirst": "Please select a ticket first",
+    "illegalTransition": "Current state ({{state}}) does not allow {{action}}"
+  },
+  "supervisor": {
+    "unassigned": "Unassigned",
+    "overdue": "Overdue"
+  },
+  "columns": {
+    "operations": "Operations"
+  },
+  "common": {
+    "loading": "Loading…",
+    "empty": "No data"
+  },
+  "stats": {
+    "total": "Total",
+    "created": "Created",
+    "assigned": "Assigned",
+    "in_progress": "In Progress",
+    "waiting": "Waiting",
+    "escalated": "Escalated",
+    "resolved": "Resolved",
+    "closed": "Closed",
+    "canceled": "Canceled"
+  }
+}

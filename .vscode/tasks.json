@@ -29,6 +29,34 @@
 			},
 			"isBackground": true,
 			"problemMatcher": []
+		},
+		{
+			"label": "run-gateway-ui",
+			"type": "shell",
+			"command": "PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8081 go run ./services/gateway",
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "run-gateway-ui-8083",
+			"type": "shell",
+			"command": "PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway",
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "run-gateway-ui-8084",
+			"type": "shell",
+			"command": "PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8084 go run ./services/gateway",
+			"isBackground": true,
+			"group": "build"
+		},
+		{
+			"label": "run-gateway-ui-8085",
+			"type": "shell",
+			"command": "PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8085 go run ./services/gateway",
+			"isBackground": true,
+			"group": "build"
 		}
 	]
 }

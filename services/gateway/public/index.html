@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AssistFusion 演示台</title>
+  <link rel="stylesheet" href="/ui/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>AssistFusion 演示台</h1>
+    <nav>
+      <a href="#agent" id="tabAgent">坐席</a>
+      <a href="#supervisor" id="tabSupervisor">主管</a>
+      <a href="#kb" id="tabKB">知识库</a>
+  <a href="#diag" id="tabDiag">诊断</a>
+      <span style="margin-left:12px"></span>
+      <select id="langSel" style="background:#0c1328; border:1px solid #1c274d; color:#e6e9ef; padding:6px 8px; border-radius:6px">
+        <option value="zh-CN">中文</option>
+        <option value="en">English</option>
+      </select>
+    </nav>
+  </header>
+
+  <main>
+    <div id="toast" class="toast" hidden></div>
+
+    <!-- 坐席工作台：左右布局 -->
+    <section id="agent" class="card">
+      <h2>坐席工作台</h2>
+      <div class="guide" id="agentGuide">
+        <div>
+          1) 左侧筛选/创建工单 → 2) 选中后在右侧操作 → 3) 下方查看知识库建议。
+        </div>
+        <button id="btnCloseGuide">不再提示</button>
+      </div>
+      <div class="layout">
+        <div class="col left">
+          <div class="row controls">
+            <label>
+              状态：
+              <select id="fltStatus">
+                <option value="">全部</option>
+                <option value="created">created</option>
+                <option value="assigned">assigned</option>
+                <option value="in_progress">in_progress</option>
+                <option value="waiting">waiting</option>
+                <option value="escalated">escalated</option>
+                <option value="resolved">resolved</option>
+                <option value="closed">closed</option>
+                <option value="canceled">canceled</option>
+              </select>
+            </label>
+            <input id="fltKeyword" placeholder="标题/描述 关键词" />
+            <button id="btnApplyFilter">筛选</button>
+            <button id="btnResetFilter">重置</button>
+          </div>
+          <div class="row">
+            <input id="tTitle" placeholder="标题" />
+            <input id="tDesc" placeholder="描述" />
+            <button id="btnCreate">创建工单</button>
+          </div>
+          <div id="ticketsList" class="table-wrap"></div>
+          <div class="row pager">
+            <button id="prevPage">上一页</button>
+            <span id="pageInfo"></span>
+            <button id="nextPage">下一页</button>
+            <button id="btnList" class="btn-small">刷新</button>
+          </div>
+        </div>
+        <div class="col right">
+          <div class="card sub">
+            <h3>工单详情与操作</h3>
+            <div class="row">
+              <input id="tId" placeholder="工单ID" />
+              <input id="tNote" placeholder="备注（可选）" />
+            </div>
+            <div class="row ops">
+              <button id="btnAssign">指派</button>
+              <button id="btnStart">开始</button>
+              <button id="btnWait">等待</button>
+              <button id="btnEscalate">升级</button>
+              <button id="btnResolve">解决</button>
+              <button id="btnClose">关闭</button>
+              <button id="btnCancel">取消</button>
+              <button id="btnReopen">重开</button>
+              <button id="btnGet" class="btn-small">刷新详情</button>
+            </div>
+            <pre id="ticketOut" class="mb8"></pre>
+            <div class="row">
+              <button id="btnCycles" class="btn-small">查看周期</button>
+              <button id="btnEvents" class="btn-small">查看事件</button>
+            </div>
+            <div id="eventsTL" class="timeline"></div>
+            <pre id="extraOut"></pre>
+          </div>
+          <div class="card sub">
+            <h3>知识库建议</h3>
+            <div class="row">
+              <input id="kbQAgent" placeholder="基于工单联动的搜索关键词" />
+              <button id="btnSearchAgent">搜索</button>
+            </div>
+            <pre id="kbOutAgent"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 主管视图 -->
+    <section id="supervisor" class="card" style="display:none">
+      <h2>主管看板</h2>
+      <div class="row">
+        <button id="supRefresh">刷新</button>
+        <label>
+          <input type="checkbox" id="supAuto" /> 自动刷新
+        </label>
+        <label>
+          周期
+          <select id="supInterval">
+            <option value="5">5s</option>
+            <option value="10" selected>10s</option>
+            <option value="30">30s</option>
+            <option value="60">60s</option>
+          </select>
+        </label>
+      </div>
+      <div id="supStats" class="stats"></div>
+      <div class="row">
+        <div class="col left" style="flex:1">
+          <div class="card sub">
+            <h3>未分配工单</h3>
+            <div id="supUnassigned" class="table-wrap"></div>
+          </div>
+        </div>
+        <div class="col right" style="flex:1">
+          <div class="card sub">
+            <h3>逾期工单（非终态）</h3>
+            <div id="supOverdue" class="table-wrap"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="diag" class="card">
+      <h2>运行诊断</h2>
+      <button id="btnReady">检查 /ready</button>
+      <pre id="readyOut"></pre>
+      <div class="row">
+        <button id="btnDomainMetrics">查看 /metrics/domain</button>
+      </div>
+      <pre id="metricsOut"></pre>
+    </section>
+
+    <!-- 保留原知识库与诊断区，知识库页面模式独立展示 -->
+
+    <section id="kb" class="card">
+      <h2>知识库</h2>
+      <div class="row">
+        <input id="kbTitle" placeholder="标题" />
+        <input id="kbContent" placeholder="内容" />
+        <button id="btnAddDoc">新增文档</button>
+      </div>
+      <div class="row">
+        <input id="kbId" placeholder="文档ID" />
+        <input id="kbTitle2" placeholder="新标题（可选）" />
+        <input id="kbContent2" placeholder="新内容（可选）" />
+        <button id="btnUpdateDoc">更新文档</button>
+        <button id="btnDeleteDoc">删除文档</button>
+      </div>
+      <div class="row">
+        <input id="kbQ" placeholder="搜索关键词" />
+        <button id="btnSearch">搜索</button>
+        <button id="btnKBInfo">后端信息</button>
+      </div>
+      <pre id="kbOut"></pre>
+    </section>
+  </main>
+
+  <footer>
+    <small>X-AssistFusion-Version 从响应头可见；JSON 已统一 snake_case。</small>
+  </footer>
+
+  <!-- i18n (CDN) -->
+  <script src="https://unpkg.com/i18next@23.11.5/dist/umd/i18next.min.js"></script>
+  <script src="https://unpkg.com/i18next-browser-languagedetector@8.2.0/dist/umd/i18nextBrowserLanguageDetector.min.js"></script>
+  <script src="/ui/i18n.js"></script>
+  <script src="/ui/app.js"></script>
+</body>
+</html>

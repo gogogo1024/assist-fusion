@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"io/fs"
 	"log"
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -87,11 +89,15 @@ func BuildServer(cfg *common.Config) *server.Hertz {
 	}
 
 	var h *server.Hertz
-	promOnce.Do(func() {
-		// create first server with tracer
-		h = server.Default(server.WithHostPorts(getAddr(cfg)), server.WithTracer(prom.NewServerTracer(":9100", "/metrics", prom.WithEnableGoCollector(true))))
-		prometheusTracerEnabled = true
-	})
+	// allow disabling prometheus exporter via env PROM_DISABLE=1|true
+	promDisabled := strings.EqualFold(os.Getenv("PROM_DISABLE"), "1") || strings.EqualFold(os.Getenv("PROM_DISABLE"), "true")
+	if !promDisabled {
+		promOnce.Do(func() {
+			// create first server with tracer
+			h = server.Default(server.WithHostPorts(getAddr(cfg)), server.WithTracer(prom.NewServerTracer(":9100", "/metrics", prom.WithEnableGoCollector(true))))
+			prometheusTracerEnabled = true
+		})
+	}
 	if h == nil { // subsequent builds without adding tracer to avoid duplicate /metrics
 		h = server.Default(server.WithHostPorts(getAddr(cfg)))
 	}
@@ -127,6 +133,7 @@ func BuildServer(cfg *common.Config) *server.Hertz {
 	registerTicketRoutes(h, repo)
 	registerKBRoutes(h, kbRepo)
 	registerAIRoutes(h)
+	registerUIRoutes(h)
 	return h
 }
 
@@ -207,6 +214,20 @@ func registerTicketRoutes(h *server.Hertz, repo common.TicketRepo) {
 
 	h.PUT("/v1/tickets/:id/escalate", func(c context.Context, ctx *app.RequestContext) {
 		handleEscalate(c, ctx, repo)
+	})
+
+	// refined states
+	h.PUT("/v1/tickets/:id/start", func(c context.Context, ctx *app.RequestContext) {
+		handleStart(c, ctx, repo)
+	})
+	h.PUT("/v1/tickets/:id/wait", func(c context.Context, ctx *app.RequestContext) {
+		handleWait(c, ctx, repo)
+	})
+	h.PUT("/v1/tickets/:id/close", func(c context.Context, ctx *app.RequestContext) {
+		handleClose(c, ctx, repo)
+	})
+	h.PUT("/v1/tickets/:id/cancel", func(c context.Context, ctx *app.RequestContext) {
+		handleCancel(c, ctx, repo)
 	})
 
 	// reopen a resolved ticket when it was solved incorrectly
@@ -365,7 +386,8 @@ func handleAssign(c context.Context, ctx *app.RequestContext, repo common.Ticket
 	}
 	// optional note
 	var req struct {
-		Note string `json:"note"`
+		Note     string `json:"note"`
+		Assignee string `json:"assignee"`
 	}
 	if b := ctx.Request.Body(); len(b) > 0 {
 		// 容错：忽略解析错误，保持后向兼容
@@ -374,6 +396,9 @@ func handleAssign(c context.Context, ctx *app.RequestContext, repo common.Ticket
 	now := time.Now().Unix()
 	t.AssignedAt = now
 	t.Status = "assigned"
+	if req.Assignee != "" {
+		t.Assignee = req.Assignee
+	}
 	// update cycle
 	if t.CurrentCycle >= 0 && t.CurrentCycle < len(t.Cycles) {
 		cyc := &t.Cycles[t.CurrentCycle]
@@ -423,8 +448,8 @@ func handleEscalate(c context.Context, ctx *app.RequestContext, repo common.Tick
 		ctx.JSON(404, map[string]string{"error": notFoundMsg})
 		return
 	}
-	// disallow escalate after resolved
-	if t.Status == "resolved" {
+	// disallow escalate after terminal states
+	if t.Status == "resolved" || t.Status == "closed" || t.Status == "canceled" {
 		common.WriteError(c, ctx, 409, common.ErrCodeConflict, "cannot escalate resolved ticket")
 		return
 	}
@@ -446,6 +471,122 @@ func handleEscalate(c context.Context, ctx *app.RequestContext, repo common.Tick
 	t.Events = append(t.Events, common.TicketEvent{Type: "escalated", At: now, Note: req.Note})
 	repo.Update(c, t)
 	observability.TicketEscalated.Add(1)
+	ctx.JSON(200, t)
+}
+
+func handleStart(c context.Context, ctx *app.RequestContext, repo common.TicketRepo) {
+	id := string(ctx.Param("id"))
+	t, _ := repo.Get(c, id)
+	if t == nil {
+		common.WriteError(c, ctx, 404, common.ErrCodeNotFound, notFoundMsg)
+		return
+	}
+	if t.Status == "resolved" || t.Status == "closed" || t.Status == "canceled" {
+		common.WriteError(c, ctx, 409, common.ErrCodeConflict, "cannot start terminal ticket")
+		return
+	}
+	var req struct {
+		Note string `json:"note"`
+	}
+	if b := ctx.Request.Body(); len(b) > 0 {
+		_ = ctx.Bind(&req)
+	}
+	now := time.Now().Unix()
+	t.Status = "in_progress"
+	if t.CurrentCycle >= 0 && t.CurrentCycle < len(t.Cycles) {
+		cyc := &t.Cycles[t.CurrentCycle]
+		cyc.Status = "in_progress"
+	}
+	t.Events = append(t.Events, common.TicketEvent{Type: "started", At: now, Note: req.Note})
+	repo.Update(c, t)
+	ctx.JSON(200, t)
+}
+
+func handleWait(c context.Context, ctx *app.RequestContext, repo common.TicketRepo) {
+	id := string(ctx.Param("id"))
+	t, _ := repo.Get(c, id)
+	if t == nil {
+		common.WriteError(c, ctx, 404, common.ErrCodeNotFound, notFoundMsg)
+		return
+	}
+	if t.Status == "resolved" || t.Status == "closed" || t.Status == "canceled" {
+		common.WriteError(c, ctx, 409, common.ErrCodeConflict, "cannot wait terminal ticket")
+		return
+	}
+	var req struct {
+		Note string `json:"note"`
+	}
+	if b := ctx.Request.Body(); len(b) > 0 {
+		_ = ctx.Bind(&req)
+	}
+	now := time.Now().Unix()
+	t.Status = "waiting"
+	if t.CurrentCycle >= 0 && t.CurrentCycle < len(t.Cycles) {
+		cyc := &t.Cycles[t.CurrentCycle]
+		cyc.Status = "waiting"
+	}
+	t.Events = append(t.Events, common.TicketEvent{Type: "waiting", At: now, Note: req.Note})
+	repo.Update(c, t)
+	ctx.JSON(200, t)
+}
+
+func handleClose(c context.Context, ctx *app.RequestContext, repo common.TicketRepo) {
+	id := string(ctx.Param("id"))
+	t, _ := repo.Get(c, id)
+	if t == nil {
+		common.WriteError(c, ctx, 404, common.ErrCodeNotFound, notFoundMsg)
+		return
+	}
+	if t.Status == "closed" || t.Status == "canceled" {
+		common.WriteError(c, ctx, 409, common.ErrCodeConflict, "ticket already terminal")
+		return
+	}
+	var req struct {
+		Note string `json:"note"`
+	}
+	if b := ctx.Request.Body(); len(b) > 0 {
+		_ = ctx.Bind(&req)
+	}
+	now := time.Now().Unix()
+	t.ClosedAt = now
+	t.Status = "closed"
+	if t.CurrentCycle >= 0 && t.CurrentCycle < len(t.Cycles) {
+		cyc := &t.Cycles[t.CurrentCycle]
+		cyc.ClosedAt = now
+		cyc.Status = "closed"
+	}
+	t.Events = append(t.Events, common.TicketEvent{Type: "closed", At: now, Note: req.Note})
+	repo.Update(c, t)
+	ctx.JSON(200, t)
+}
+
+func handleCancel(c context.Context, ctx *app.RequestContext, repo common.TicketRepo) {
+	id := string(ctx.Param("id"))
+	t, _ := repo.Get(c, id)
+	if t == nil {
+		common.WriteError(c, ctx, 404, common.ErrCodeNotFound, notFoundMsg)
+		return
+	}
+	if t.Status == "closed" || t.Status == "canceled" {
+		common.WriteError(c, ctx, 409, common.ErrCodeConflict, "ticket already terminal")
+		return
+	}
+	var req struct {
+		Note string `json:"note"`
+	}
+	if b := ctx.Request.Body(); len(b) > 0 {
+		_ = ctx.Bind(&req)
+	}
+	now := time.Now().Unix()
+	t.CanceledAt = now
+	t.Status = "canceled"
+	if t.CurrentCycle >= 0 && t.CurrentCycle < len(t.Cycles) {
+		cyc := &t.Cycles[t.CurrentCycle]
+		cyc.CanceledAt = now
+		cyc.Status = "canceled"
+	}
+	t.Events = append(t.Events, common.TicketEvent{Type: "canceled", At: now, Note: req.Note})
+	repo.Update(c, t)
 	ctx.JSON(200, t)
 }
 
@@ -759,6 +900,71 @@ func registerAIRoutesRPC(h *server.Hertz, api gateway.AIAPI) {
 		observability.AIEmbeddingCalls.Add(1)
 		ctx.JSON(200, map[string]any{"vectors": r.Vectors, "dim": r.Dim})
 	})
+}
+
+// --- UI Routes (static files under /ui) ---
+func registerUIRoutes(h *server.Hertz) {
+	contentFS := getUIFS()
+
+	fileHandler := func(c context.Context, ctx *app.RequestContext) {
+		// Strip /ui prefix
+		p := string(ctx.Request.URI().Path())
+		if strings.HasPrefix(p, "/ui") {
+			p = strings.TrimPrefix(p, "/ui")
+		}
+		if p == "" || p == "/" {
+			p = "/index.html"
+		}
+		// Prevent traversal
+		if strings.Contains(p, "..") {
+			common.WriteError(c, ctx, 400, common.ErrCodeBadRequest, badRequestMsg)
+			return
+		}
+		// Read file from embedded FS
+		b, err := fs.ReadFile(contentFS, strings.TrimPrefix(p, "/"))
+		if err != nil {
+			// SPA fallback to index.html
+			b, err = fs.ReadFile(contentFS, "index.html")
+			if err != nil {
+				common.WriteError(c, ctx, 404, common.ErrCodeNotFound, notFoundMsg)
+				return
+			}
+			ctx.Response.Header.Set("Content-Type", "text/html; charset=utf-8")
+			ctx.Write(b)
+			return
+		}
+		// Content-Type and caching
+		ctx.Response.Header.Set("Content-Type", guessMime(p))
+		if strings.HasSuffix(p, ".js") || strings.HasSuffix(p, ".css") || strings.HasSuffix(p, ".svg") {
+			ctx.Response.Header.Set("Cache-Control", "public, max-age=86400")
+		}
+		ctx.Write(b)
+	}
+
+	h.GET("/ui", fileHandler)
+	h.GET("/ui/*filepath", fileHandler)
+}
+
+func guessMime(p string) string {
+	lp := strings.ToLower(p)
+	switch {
+	case strings.HasSuffix(lp, ".html"):
+		return "text/html; charset=utf-8"
+	case strings.HasSuffix(lp, ".css"):
+		return "text/css; charset=utf-8"
+	case strings.HasSuffix(lp, ".js"):
+		return "application/javascript; charset=utf-8"
+	case strings.HasSuffix(lp, ".json"):
+		return "application/json; charset=utf-8"
+	case strings.HasSuffix(lp, ".svg"):
+		return "image/svg+xml"
+	case strings.HasSuffix(lp, ".png"):
+		return "image/png"
+	case strings.HasSuffix(lp, ".jpg") || strings.HasSuffix(lp, ".jpeg"):
+		return "image/jpeg"
+	default:
+		return "application/octet-stream"
+	}
 }
 
 // test helper (not exposed in production builds): startTestServer returns server and bound address

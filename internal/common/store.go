@@ -18,6 +18,15 @@ type Ticket struct {
 	ResolvedAt  int64  `json:"resolved_at"`
 	EscalatedAt int64  `json:"escalated_at"`
 	ReopenedAt  int64  `json:"reopened_at"`
+	ClosedAt    int64  `json:"closed_at"`
+	CanceledAt  int64  `json:"canceled_at"`
+	// more business fields
+	Assignee string   `json:"assignee"`
+	Priority string   `json:"priority"`
+	Customer string   `json:"customer"`
+	Category string   `json:"category"`
+	Tags     []string `json:"tags"`
+	DueAt    int64    `json:"due_at"`
 	// Cycles-based modeling (B): each reopen creates a new cycle
 	Cycles       []TicketCycle `json:"cycles"`
 	CurrentCycle int           `json:"current_cycle"`
@@ -31,6 +40,8 @@ type TicketCycle struct {
 	AssignedAt  int64  `json:"assigned_at"`
 	ResolvedAt  int64  `json:"resolved_at"`
 	EscalatedAt int64  `json:"escalated_at"`
+	ClosedAt    int64  `json:"closed_at"`
+	CanceledAt  int64  `json:"canceled_at"`
 	Status      string `json:"status"`
 }
 

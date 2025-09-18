@@ -114,6 +114,80 @@ curl -X POST http://localhost:8081/v1/docs -d '{"title":"FAQ","content":"..."}' 
 curl -X POST http://localhost:8081/v1/embeddings -d '{"texts":["客服是什么？"]}' -H 'Content-Type: application/json'
 ```
 
+### Ticket 字段与状态机（扩展）
+
+为适配更细的业务场景，Ticket 增加了若干可选字段，并扩展了状态流转接口（原有接口保持不变，向下兼容）：
+
+新增字段（snake_case）：
+- `assignee` 指派人
+- `priority` 优先级（字符串，可后续扩展枚举）
+- `customer` 客户标识
+- `category` 类目
+- `tags` 标签数组
+- `due_at` 截止时间（秒级时间戳）
+- `closed_at` / `canceled_at` 关闭/取消时间
+
+状态机与接口扩展：
+- 新增动作端点（PUT）：
+  - `/v1/tickets/:id/start` → 进入 `in_progress`（事件 `started`）
+  - `/v1/tickets/:id/wait` → 进入 `waiting`（事件 `waiting`）
+  - `/v1/tickets/:id/close` → 进入 `closed`（写入 `closed_at`，事件 `closed`）
+  - `/v1/tickets/:id/cancel` → 进入 `canceled`（写入 `canceled_at`，事件 `canceled`）
+- 既有动作端点保留：`assign` / `escalate` / `resolve` / `reopen`
+- 约束（节选）：
+  - 已 `resolved/closed/canceled` 的工单禁止 `escalate`（409）
+  - `start`/`wait` 不可作用于终态（`resolved/closed/canceled`）（409）
+  - `close`/`cancel` 对终态重复操作返回 409
+- `assign` 支持请求体包含 `assignee` 与 `note`，会写入 `assignee` 字段并记录事件。
+
+兼容性：老的 JSON 与接口仍可正常工作，新字段均为可选并默认空值；事件与周期（cycles）模型保持不变，仅新增了 `closed_at/canceled_at` 快照字段。
+
+## 前端演示界面（/ui）
+
+内置了一个极简前端用于演示整个业务流程（工单 + 知识库），通过 go:embed 打包在 `services/gateway/public/` 下，随网关进程一起提供静态资源。
+
+运行与访问：
+
+```sh
+# 1) 启动 gateway（内存 KB；禁用 Prometheus 9100 端口，避免端口冲突）
+PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8081 go run ./services/gateway
+
+# 如果 :8081 被占用，可换一个端口
+PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway
+
+# 2) 浏览器访问
+# http://localhost:8081/ui  （或对应端口）
+```
+
+页面包含：
+- 运行诊断：一键请求 `GET /ready`。
+- 工单流程：创建工单、指派、升级、解决、重开，查看 `cycles` 与 `events`。
+- 知识库：新增/更新/删除文档，搜索与查看 `kb/info`。
+
+### 国际化（i18n）
+
+- 语言切换：页面右上角下拉框（中文 / English），或在 URL 中追加 `?lang=zh-CN|en`。
+- 持久化：语言首选项会保存到 `localStorage`，并在后续访问时自动生效。
+- 覆盖范围：顶部导航、表格表头、按钮、分页信息、状态徽标、提示/告警、主管看板（统计卡片、未分配/逾期表）等。
+- 浏览器语言：默认按浏览器语言自动检测，未命中时回退到中文。
+
+常见问题：
+- 端口占用：
+  - `:8081` 被占用 → 改用 `HTTP_ADDR=:8083`。
+  - Prometheus `:9100` 冲突 → 设置 `PROM_DISABLE=1`（演示/开发环境一般推荐关闭）。
+- JSON 大小写：所有接口响应均为 `snake_case`（如 `created_at`、`current_cycle`）。
+- RPC 模式：设置 `FEATURE_RPC=true` 可切换为下游 Kitex 模式（需先启动对应 RPC 服务）。
+
+### 坐席工作台使用指南
+
+- 入口：顶部选择“坐席”。默认即进入坐席视图。
+- 左侧：筛选队列（状态/关键词）、创建工单、工单列表与分页。
+- 右侧：
+  - 工单详情与统一操作区：assign/start/wait/escalate/resolve/close/cancel/reopen（支持备注）。
+  - 事件时间线/周期查看。
+  - 知识库建议：默认以当前工单“标题+描述”为关键词，可修改后搜索，展示前 N 条。
+- 提示：右上角会出现轻量提示；失败将显示错误码或原因。
+
 ## eino集成说明
 - ai-svc内置eino编排，支持多Provider（OpenAI/火山/本地），可通过环境变量AI_PROVIDER切换。
 - 默认mock provider，无需外部大模型即可本地跑通。
