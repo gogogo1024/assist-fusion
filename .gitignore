@@ -52,3 +52,10 @@ es-data/
 # Airflow/mise task cache (if any)
 .mise/
 .airflow/
+
+# --- AI prompts & session notes (do not commit) ---
+.github/copilot-instructions.md
+docs/chat/*session*
+docs/chat/**/*session*
+docs/chat/**/*-details.md
+docs/chat/private/
