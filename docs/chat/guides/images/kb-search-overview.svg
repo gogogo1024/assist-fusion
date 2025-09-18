@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="460" viewBox="0 0 920 460" role="img" aria-label="KB search overview: n-gram, inverted index, IDF">
+  <defs>
+    <style>
+      .box{fill:#fff;stroke:#333;stroke-width:1.2}
+      .title{font:600 14px system-ui, -apple-system, Segoe UI, Roboto}
+      .text{font:13px system-ui, -apple-system, Segoe UI, Roboto}
+      .mono{font:12px SFMono-Regular, Menlo, Consolas, monospace}
+      .arrow{stroke:#555;stroke-width:1.2;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- Query -->
+  <rect x="20" y="40" width="220" height="80" rx="8" class="box"/>
+  <text x="30" y="60" class="title">Query 规范化 &amp; n-gram</text>
+  <text x="30" y="84" class="text">· 大小写/空白规范化</text>
+  <text x="30" y="104" class="text">· 生成 n-gram（默认 2）</text>
+  <text x="30" y="124" class="text">· 查询 n-gram 去重</text>
+
+  <!-- Docs -->
+  <rect x="20" y="170" width="220" height="120" rx="8" class="box"/>
+  <text x="30" y="190" class="title">文档索引构建</text>
+  <text x="30" y="214" class="text">· 标题、正文分别 n-gram</text>
+  <text x="30" y="234" class="text">· 倒排表：gram → doc, tf</text>
+  <text x="30" y="254" class="text">· Upsert/删除维护一致性</text>
+  <text x="30" y="274" class="text">· UTF-8 安全文摘</text>
+
+  <!-- Inverted Index -->
+  <rect x="300" y="60" width="280" height="210" rx="8" class="box"/>
+  <text x="310" y="80" class="title">倒排索引（Inverted Index）</text>
+  <text x="310" y="104" class="text">Posting 列表按字段区分：</text>
+  <text x="320" y="126" class="mono">g → {doc: X, tf_title: a, tf_body: b}</text>
+  <text x="320" y="146" class="mono">h → {doc: Y, tf_title: c, tf_body: d}</text>
+  <text x="320" y="166" class="text">df(g) = 出现该 gram 的文档数</text>
+  <text x="320" y="190" class="text">更新/删除：按计数增减 postings</text>
+  <text x="320" y="210" class="text">并发安全：细粒度锁 + 不变式</text>
+
+  <!-- Scoring -->
+  <rect x="620" y="40" width="280" height="150" rx="8" class="box"/>
+  <text x="630" y="60" class="title">打分（Score）与 IDF</text>
+  <text x="630" y="84" class="text">字段权重：标题×2，正文×1</text>
+  <text x="630" y="104" class="text">简化 IDF：df↑ → idf↓</text>
+  <text x="630" y="124" class="mono">score = Σ (2·tf_t + 1·tf_b) · idf(g)</text>
+
+  <!-- Ranking -->
+  <rect x="620" y="210" width="280" height="80" rx="8" class="box"/>
+  <text x="630" y="232" class="title">排序与回退</text>
+  <text x="630" y="256" class="text">按分数降序；无匹配用子串回退</text>
+
+  <!-- Arrows -->
+  <path d="M 240 80 C 260 80, 270 80, 300 90" class="arrow"/>
+  <path d="M 240 210 C 260 210, 270 210, 300 190" class="arrow"/>
+  <path d="M 580 120 C 600 120, 610 120, 620 115" class="arrow"/>
+  <path d="M 580 200 C 600 200, 610 200, 620 230" class="arrow"/>
+
+  <!-- Footer -->
+  <text x="20" y="430" class="mono" fill="#666">n-gram 可配置（默认 2）；查询 n-gram 去重；IDF 为简化形式；实现细节见 internal/kb。</text>
+</svg>

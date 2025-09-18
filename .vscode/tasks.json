@@ -1,0 +1,34 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Go: test all",
+			"type": "shell",
+			"command": "go",
+			"args": [
+				"test",
+				"./..."
+			],
+			"problemMatcher": [
+				"$go"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run ticket service",
+			"type": "shell",
+			"command": "go",
+			"args": [
+				"run",
+				"./services/ticket-svc/main.go"
+			],
+			"options": {
+				"env": {
+					"HTTP_ADDR": ":8081"
+				}
+			},
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

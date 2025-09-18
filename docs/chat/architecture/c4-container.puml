@@ -1,0 +1,19 @@
+@startuml C4_Container
+' C4-PlantUML 容器图（Container Diagram）
+' 在 VS Code 中建议安装 "PlantUML" 扩展进行预览。
+' 如果远程 include 受限，可将 C4_Container.puml 等依赖 vendoring 到本仓库并改为本地 include。
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(client, "客户端/调用方", "外部用户或调用系统")
+
+System_Boundary(monolith, "客服系统与AI（Monolith）") {
+  Container(api, "Monolith API", "Go + CloudWeGo Hertz", "REST/JSON: /v1/tickets, /v1/docs|/v1/search, /v1/embeddings")
+}
+
+System_Ext(airflow, "Airflow", "KB Ingest Pipeline（规划中）")
+
+Rel(client, api, "HTTP/JSON")
+Rel(api, airflow, "计划/批量数据", "异步/批处理（规划）")
+
+@enduml

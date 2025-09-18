@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+    <style>
+      .box{ fill:#fff; stroke:#555; stroke-width:2; rx:8; ry:8; }
+      .muted{ fill:#777; }
+      .dash{ stroke-dasharray:6 6; }
+      text{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; font-size:14px; fill:#222; }
+      .title{ font-weight:700; font-size:16px; }
+      .note{ font-size:12px; fill:#555; }
+    </style>
+  </defs>
+
+  <!-- Client -->
+  <rect class="box" x="40" y="120" width="180" height="80"/>
+  <text x="130" y="150" text-anchor="middle" class="title">Client</text>
+  <text x="130" y="170" text-anchor="middle" class="note">HTTP / JSON</text>
+
+  <!-- Monolith API -->
+  <rect class="box" x="320" y="60" width="300" height="200"/>
+  <text x="470" y="90" text-anchor="middle" class="title">Monolith API</text>
+  <text x="470" y="110" text-anchor="middle">Go + CloudWeGo Hertz</text>
+  <text x="470" y="135" text-anchor="middle" class="note">/v1/tickets</text>
+  <text x="470" y="155" text-anchor="middle" class="note">/v1/docs | /v1/search</text>
+  <text x="470" y="175" text-anchor="middle" class="note">/v1/embeddings</text>
+
+  <!-- Airflow (planned) -->
+  <rect class="box" x="720" y="120" width="160" height="80"/>
+  <text x="800" y="150" text-anchor="middle" class="title">Airflow</text>
+  <text x="800" y="170" text-anchor="middle" class="note">KB Ingest (planned)</text>
+
+  <!-- Arrows -->
+  <line x1="220" y1="160" x2="320" y2="160" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="620" y1="160" x2="720" y2="160" stroke="#999" stroke-width="2" class="dash" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="40" y="20" width="540" height="28" fill="none" stroke="none"/>
+  <text x="40" y="40" class="note">单体（Modular Monolith）对外提供 HTTP/JSON；Airflow 为规划中的 KB ingest 外部编排</text>
+</svg>

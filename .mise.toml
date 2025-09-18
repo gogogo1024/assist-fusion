@@ -1,0 +1,37 @@
+[tools]
+# 固定 Go 版本（可按需调整次版本）
+go = "1.22"
+# 静态检查工具（可选）
+golangci-lint = "1.59.0"
+
+[tasks.bootstrap]
+run = "go mod tidy"
+
+[tasks.test]
+run = "go test ./..."
+
+[tasks.lint]
+run = "golangci-lint run"
+
+[tasks.run-ticket]
+env = { HTTP_ADDR = ":8081" }
+run = "go run ./services/ticket-svc/main.go"
+
+[tasks.es-up]
+run = "docker compose -f docker/es/docker-compose.yml up -d"
+
+[tasks.es-down]
+run = "docker compose -f docker/es/docker-compose.yml down -v"
+
+[tasks.run-ticket-es]
+env = { HTTP_ADDR = ":8081", KB_BACKEND = "es", ES_ADDRS = "http://localhost:9200", ES_INDEX = "kb_docs" }
+run = "go run ./services/ticket-svc/main.go"
+
+# 预留：知识库与AI服务任务，创建对应服务后可解注
+# [tasks.run-kb]
+# env = { HTTP_ADDR = ":8082" }
+# run = "go run ./services/kb-svc/main.go"
+
+# [tasks.run-ai]
+# env = { HTTP_ADDR = ":8083" }
+# run = "go run ./services/ai-svc/main.go"
