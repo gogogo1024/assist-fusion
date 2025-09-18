@@ -1,0 +1,54 @@
+# ---- OS & Editor ----
+.DS_Store
+*.swp
+*.swo
+
+# VS Code
+.vscode/
+.history/
+
+# Logs
+logs/
+*.log
+*.out
+
+# Go build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.prof
+coverage.out
+profile.out
+
+# Go modules / vendor
+vendor/
+
+# Build cache & temp
+/tmp/
+**/.cache/
+**/dist/
+
+# IDEs
+.idea/
+*.iml
+
+# Docker & Compose
+.docker/
+/docker/
+node_modules/
+
+# Local env/config
+.env
+.env.*
+*.local
+
+# Elastic / data dirs
+es-data/
+
+# Airflow/mise task cache (if any)
+.mise/
+.airflow/
