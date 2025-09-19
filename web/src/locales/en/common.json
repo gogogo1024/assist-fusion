@@ -22,7 +22,9 @@
     "search": "Search",
     "backendInfo": "Backend Info",
     "checkReady": "Check /ready",
-    "viewMetrics": "View /metrics/domain"
+    "viewMetrics": "View /metrics/domain",
+    "vivid": "Vivid",
+    "vividOn": "Vivid ON"
   },
   "guide": {
     "agent": {

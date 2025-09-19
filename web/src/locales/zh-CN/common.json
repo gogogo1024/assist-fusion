@@ -22,7 +22,9 @@
     "search": "搜索",
     "backendInfo": "后端信息",
     "checkReady": "检查 /ready",
-    "viewMetrics": "查看 /metrics/domain"
+    "viewMetrics": "查看 /metrics/domain",
+    "vivid": "炫彩",
+    "vividOn": "炫彩已开"
   },
   "guide": {
     "agent": {

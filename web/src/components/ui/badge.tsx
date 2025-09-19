@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { Tag } from '@arco-design/web-react'
 import { cn } from '../../lib/utils'
 
 type BadgeVariant = 'default' | 'info' | 'success' | 'warning' | 'danger' | 'neutral'
@@ -9,20 +10,20 @@ export interface BadgeProps extends Readonly<React.HTMLAttributes<HTMLSpanElemen
   readonly size?: BadgeSize
 }
 
-const variantClass: Record<BadgeVariant, string> = {
-  default: 'badge',
-  info: 'badge bg-sky-500/20 text-sky-300 border-sky-700',
-  success: 'badge bg-emerald-500/20 text-emerald-300 border-emerald-700',
-  warning: 'badge bg-amber-500/20 text-amber-200 border-amber-700',
-  danger: 'badge bg-rose-500/20 text-rose-300 border-rose-700',
-  neutral: 'badge bg-muted text-muted-foreground border-border',
+const sizeMap: Record<BadgeSize, 'small' | 'medium'> = {
+  sm: 'small',
+  md: 'medium'
 }
 
-const sizeClass: Record<BadgeSize, string> = {
-  sm: 'px-2 py-0.5 text-[11px]',
-  md: 'px-2 py-0.5 text-xs',
+const colorVar: Record<Exclude<BadgeVariant,'default'>, string> = {
+  success: 'var(--color-success)',
+  warning: 'var(--color-warning)',
+  danger: 'var(--color-danger)',
+  info: 'var(--color-info)',
+  neutral: 'var(--color-neutral)'
 }
 
-export function Badge({ className, variant = 'default', size = 'md', ...props }: BadgeProps) {
-  return <span className={cn(variantClass[variant], sizeClass[size], className)} {...props} />
+export function Badge({ className, variant = 'default', size = 'md', children, ...rest }: BadgeProps) {
+  const color = variant === 'default' ? undefined : colorVar[variant]
+  return <Tag size={sizeMap[size]} color={color} className={cn(className)} {...rest}>{children}</Tag>
 }

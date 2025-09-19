@@ -59,3 +59,9 @@ docs/chat/*session*
 docs/chat/**/*session*
 docs/chat/**/*-details.md
 docs/chat/private/
+
+
+web/node_modules
+web/dist
+web/docs
+web/README.theme.md

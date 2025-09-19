@@ -1,0 +1,76 @@
+/* Design Tokens (MonoBrand) */
+/* Base (dark / vivid baseline) */
+:root {
+  /* Brand */
+  --c-brand-primary: hsl(262 68% 54%); /* Purple (primary) */
+  --c-brand-primary-hover: hsl(262 68% 49%);
+  --c-brand-accent: hsl(318 75% 54%); /* Magenta accent */
+  --c-brand-accent-hover: hsl(318 75% 49%);
+  --c-focus-ring: var(--c-brand-accent);
+
+  /* Fallback neutrals (dark) still rely on existing tailwind theme for vivid */
+  --c-bg-base: hsl(230 60% 6%);
+  --c-bg-alt: hsl(230 55% 8%);
+  --c-surface: hsl(230 55% 8%);
+  --c-border: hsl(230 35% 18%);
+  --c-text: hsl(220 20% 95%);
+  --c-text-subtle: hsl(220 12% 70%);
+  --c-muted-bg: hsl(230 35% 16%);
+  --c-muted-bg-hover: hsl(230 35% 22%);
+  --c-outline: var(--c-focus-ring);
+
+  /* Accent utilities */
+  --c-accent-bg: color-mix(in srgb, var(--c-brand-accent) 18%, var(--c-bg-base));
+  --c-accent-border: color-mix(in srgb, var(--c-brand-accent) 55%, white);
+  --c-accent-fg: var(--c-brand-accent);
+}
+
+/* Minimal (light) overrides */
+body.minimal {
+  /* Contrast boost: darken base slightly, clarify alt, strengthen border */
+  --c-bg-base: #f2f4f7;  /* was #f6f7f9 */
+  --c-bg-alt: #e9edf1;   /* was #eceef1 a bit more separation */
+  --c-surface: #ffffff;
+  --c-border: #c5c9cf;   /* was #e4e6eb -> deeper to define edges */
+  --c-text: #1f2430;     /* slightly deeper anchor text */
+  --c-text-subtle: #5a6472; /* slightly darker than #617083 inverse? adjust nuance */
+  --c-muted-bg: #eef1f4; /* lighten muted to avoid flattening with base */
+  --c-muted-bg-hover: #e3e7eb; /* adjust hover */
+  --c-outline: var(--c-focus-ring);
+
+  --c-button-primary-bg: var(--c-brand-primary);
+  --c-button-primary-bg-hover: var(--c-brand-primary-hover);
+  --c-button-muted-bg: var(--c-muted-bg);
+  --c-button-muted-fg: #444444;
+  --c-button-outline-border: #dcdfe3;
+  --c-button-outline-hover-bg: #f2f4f6;
+
+  /* Status (light) token set */
+  --c-success-bg-subtle: #e7f6ef;
+  --c-success-fg: #1d6b43;
+  --c-success-border: #b6dfc9;
+
+  --c-warning-bg-subtle: #fff5d7;
+  --c-warning-fg: #8a5b00;
+  --c-warning-border: #f2da8a;
+
+  --c-danger-bg-subtle: #fde9ea;
+  --c-danger-fg: #b3273a;
+  --c-danger-border: #f3b6be;
+
+  --c-info-bg-subtle: #e3f2fd; /* Keep blue palette for info content */
+  --c-info-fg: #0b588c;
+  --c-info-border: #a9d3ef;
+
+  --c-neutral-bg-subtle: #eceff2;
+  --c-neutral-fg: #5a646f;
+  --c-neutral-border: #d1d5da;
+
+  /* Legend: info uses accent per user decision */
+  --c-legend-info: var(--c-brand-accent);
+
+  /* Accent badge */
+  --c-accent-bg: color-mix(in srgb, var(--c-brand-accent) 15%, white);
+  --c-accent-border: color-mix(in srgb, var(--c-brand-accent) 55%, white);
+  --c-accent-fg: var(--c-brand-accent);
+}

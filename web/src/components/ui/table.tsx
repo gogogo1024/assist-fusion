@@ -1,62 +1,28 @@
 import * as React from 'react'
+import { Table as ArcoTable } from '@arco-design/web-react'
 import { cn } from '../../lib/utils'
 
-export const Table = React.forwardRef<HTMLTableElement, Readonly<React.HTMLAttributes<HTMLTableElement>>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-      {/* The table header/body are provided by consumers (TableHeader/TableBody). Suppress rule that expects header here. */}
-      {/* eslint-disable-next-line */}
-      <table ref={ref} className={cn('table w-full caption-bottom text-sm', className)} {...props} />
+// 兼容层：旧的 <Table><TableHeader/><TableBody/>... 结构被频繁使用时，可选择渐进迁移。
+// 这里提供一个轻量包装：如果传入 children 里已经是 <ArcoTable columns data> 模式，可直接改业务端；
+// 暂时维持旧导出，内部用原生 <table>，后续再统一替换成真正的 ArcoTable columns API。
+
+export const Table = React.forwardRef<HTMLDivElement, Readonly<React.HTMLAttributes<HTMLDivElement>>>(
+  ({ className, children, ...rest }, ref) => (
+    <div ref={ref} className={cn('relative w-full overflow-auto table-wrapper', className)} {...rest}>
+      {children}
     </div>
   )
 )
 Table.displayName = 'Table'
 
-export const TableHeader = React.forwardRef<HTMLTableSectionElement, Readonly<React.HTMLAttributes<HTMLTableSectionElement>>>(
-  ({ className, ...props }, ref) => (
-    <thead ref={ref} className={cn('[&_tr]:border-b', className)} {...props} />
-  )
-)
-TableHeader.displayName = 'TableHeader'
+// 保留语义标签，方便逐步把整块替换成 <ArcoTable /> 时全局搜：
+export const TableHeader = (props: Readonly<React.HTMLAttributes<HTMLTableSectionElement>>) => <thead {...props} />
+export const TableBody = (props: Readonly<React.HTMLAttributes<HTMLTableSectionElement>>) => <tbody {...props} />
+export const TableFooter = (props: Readonly<React.HTMLAttributes<HTMLTableSectionElement>>) => <tfoot {...props} />
+export const TableRow = (props: Readonly<React.HTMLAttributes<HTMLTableRowElement>>) => <tr {...props} />
+export const TableHead = (props: Readonly<React.ThHTMLAttributes<HTMLTableCellElement>>) => <th {...props} />
+export const TableCell = (props: Readonly<React.TdHTMLAttributes<HTMLTableCellElement>>) => <td {...props} />
+export const TableCaption = (props: Readonly<React.HTMLAttributes<HTMLTableCaptionElement>>) => <caption {...props} />
 
-export const TableBody = React.forwardRef<HTMLTableSectionElement, Readonly<React.HTMLAttributes<HTMLTableSectionElement>>>(
-  ({ className, ...props }, ref) => (
-    <tbody ref={ref} className={cn('[&_tr:last-child]:border-0', className)} {...props} />
-  )
-)
-TableBody.displayName = 'TableBody'
-
-export const TableFooter = React.forwardRef<HTMLTableSectionElement, Readonly<React.HTMLAttributes<HTMLTableSectionElement>>>(
-  ({ className, ...props }, ref) => (
-    <tfoot ref={ref} className={cn('bg-muted/50 font-medium', className)} {...props} />
-  )
-)
-TableFooter.displayName = 'TableFooter'
-
-export const TableRow = React.forwardRef<HTMLTableRowElement, Readonly<React.HTMLAttributes<HTMLTableRowElement>>>(
-  ({ className, ...props }, ref) => (
-    <tr ref={ref} className={cn('border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted', className)} {...props} />
-  )
-)
-TableRow.displayName = 'TableRow'
-
-export const TableHead = React.forwardRef<HTMLTableCellElement, Readonly<React.ThHTMLAttributes<HTMLTableCellElement>>>(
-  ({ className, ...props }, ref) => (
-    <th ref={ref} className={cn('h-10 px-2 text-left align-middle font-medium text-muted-foreground', className)} {...props} />
-  )
-)
-TableHead.displayName = 'TableHead'
-
-export const TableCell = React.forwardRef<HTMLTableCellElement, Readonly<React.TdHTMLAttributes<HTMLTableCellElement>>>(
-  ({ className, ...props }, ref) => (
-    <td ref={ref} className={cn('p-2 align-middle', className)} {...props} />
-  )
-)
-TableCell.displayName = 'TableCell'
-
-export const TableCaption = React.forwardRef<HTMLTableCaptionElement, Readonly<React.HTMLAttributes<HTMLTableCaptionElement>>>(
-  ({ className, ...props }, ref) => (
-    <caption ref={ref} className={cn('mt-4 text-sm text-muted-foreground', className)} {...props} />
-  )
-)
-TableCaption.displayName = 'TableCaption'
+// 额外导出一个真正的 Arco Table 便于新代码直接使用
+export const ATable = ArcoTable
