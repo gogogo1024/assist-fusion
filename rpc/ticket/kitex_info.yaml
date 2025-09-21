@@ -1,0 +1,4 @@
+service: ticket-rpc
+language: go
+tool_version: v0.14.0
+# idl: idl/ticket.thrift

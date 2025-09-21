@@ -1,0 +1,4 @@
+service: kb-rpc
+language: go
+tool_version: v0.14.0
+# idl: idl/kb.thrift

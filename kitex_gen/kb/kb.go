@@ -8,21 +8,385 @@ import (
 	"github.com/gogogo1024/assist-fusion/kitex_gen/common"
 )
 
+type AddDocRequest struct {
+	Title   string            `thrift:"title,1" frugal:"1,default,string" json:"title"`
+	Content string            `thrift:"content,2" frugal:"2,default,string" json:"content"`
+	Tags    map[string]string `thrift:"tags,3,optional" frugal:"3,optional,map<string:string>" json:"tags,omitempty"`
+}
+
+func NewAddDocRequest() *AddDocRequest {
+	return &AddDocRequest{}
+}
+
+func (p *AddDocRequest) InitDefault() {
+}
+
+func (p *AddDocRequest) GetTitle() (v string) {
+	return p.Title
+}
+
+func (p *AddDocRequest) GetContent() (v string) {
+	return p.Content
+}
+
+var AddDocRequest_Tags_DEFAULT map[string]string
+
+func (p *AddDocRequest) GetTags() (v map[string]string) {
+	if !p.IsSetTags() {
+		return AddDocRequest_Tags_DEFAULT
+	}
+	return p.Tags
+}
+func (p *AddDocRequest) SetTitle(val string) {
+	p.Title = val
+}
+func (p *AddDocRequest) SetContent(val string) {
+	p.Content = val
+}
+func (p *AddDocRequest) SetTags(val map[string]string) {
+	p.Tags = val
+}
+
+func (p *AddDocRequest) IsSetTags() bool {
+	return p.Tags != nil
+}
+
+func (p *AddDocRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("AddDocRequest(%+v)", *p)
+}
+
+var fieldIDToName_AddDocRequest = map[int16]string{
+	1: "title",
+	2: "content",
+	3: "tags",
+}
+
+type UpdateDocRequest struct {
+	Id      string            `thrift:"id,1" frugal:"1,default,string" json:"id"`
+	Title   *string           `thrift:"title,2,optional" frugal:"2,optional,string" json:"title,omitempty"`
+	Content *string           `thrift:"content,3,optional" frugal:"3,optional,string" json:"content,omitempty"`
+	Tags    map[string]string `thrift:"tags,4,optional" frugal:"4,optional,map<string:string>" json:"tags,omitempty"`
+}
+
+func NewUpdateDocRequest() *UpdateDocRequest {
+	return &UpdateDocRequest{}
+}
+
+func (p *UpdateDocRequest) InitDefault() {
+}
+
+func (p *UpdateDocRequest) GetId() (v string) {
+	return p.Id
+}
+
+var UpdateDocRequest_Title_DEFAULT string
+
+func (p *UpdateDocRequest) GetTitle() (v string) {
+	if !p.IsSetTitle() {
+		return UpdateDocRequest_Title_DEFAULT
+	}
+	return *p.Title
+}
+
+var UpdateDocRequest_Content_DEFAULT string
+
+func (p *UpdateDocRequest) GetContent() (v string) {
+	if !p.IsSetContent() {
+		return UpdateDocRequest_Content_DEFAULT
+	}
+	return *p.Content
+}
+
+var UpdateDocRequest_Tags_DEFAULT map[string]string
+
+func (p *UpdateDocRequest) GetTags() (v map[string]string) {
+	if !p.IsSetTags() {
+		return UpdateDocRequest_Tags_DEFAULT
+	}
+	return p.Tags
+}
+func (p *UpdateDocRequest) SetId(val string) {
+	p.Id = val
+}
+func (p *UpdateDocRequest) SetTitle(val *string) {
+	p.Title = val
+}
+func (p *UpdateDocRequest) SetContent(val *string) {
+	p.Content = val
+}
+func (p *UpdateDocRequest) SetTags(val map[string]string) {
+	p.Tags = val
+}
+
+func (p *UpdateDocRequest) IsSetTitle() bool {
+	return p.Title != nil
+}
+
+func (p *UpdateDocRequest) IsSetContent() bool {
+	return p.Content != nil
+}
+
+func (p *UpdateDocRequest) IsSetTags() bool {
+	return p.Tags != nil
+}
+
+func (p *UpdateDocRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("UpdateDocRequest(%+v)", *p)
+}
+
+var fieldIDToName_UpdateDocRequest = map[int16]string{
+	1: "id",
+	2: "title",
+	3: "content",
+	4: "tags",
+}
+
+type DeleteDocRequest struct {
+	Id string `thrift:"id,1" frugal:"1,default,string" json:"id"`
+}
+
+func NewDeleteDocRequest() *DeleteDocRequest {
+	return &DeleteDocRequest{}
+}
+
+func (p *DeleteDocRequest) InitDefault() {
+}
+
+func (p *DeleteDocRequest) GetId() (v string) {
+	return p.Id
+}
+func (p *DeleteDocRequest) SetId(val string) {
+	p.Id = val
+}
+
+func (p *DeleteDocRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("DeleteDocRequest(%+v)", *p)
+}
+
+var fieldIDToName_DeleteDocRequest = map[int16]string{
+	1: "id",
+}
+
+type DeleteDocResponse struct {
+	Ok bool `thrift:"ok,1" frugal:"1,default,bool" json:"ok"`
+}
+
+func NewDeleteDocResponse() *DeleteDocResponse {
+	return &DeleteDocResponse{}
+}
+
+func (p *DeleteDocResponse) InitDefault() {
+}
+
+func (p *DeleteDocResponse) GetOk() (v bool) {
+	return p.Ok
+}
+func (p *DeleteDocResponse) SetOk(val bool) {
+	p.Ok = val
+}
+
+func (p *DeleteDocResponse) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("DeleteDocResponse(%+v)", *p)
+}
+
+var fieldIDToName_DeleteDocResponse = map[int16]string{
+	1: "ok",
+}
+
+type SearchRequest struct {
+	Query       string `thrift:"query,1" frugal:"1,default,string" json:"query"`
+	Limit       *int32 `thrift:"limit,2,optional" frugal:"2,optional,i32" json:"limit,omitempty"`
+	Offset      *int32 `thrift:"offset,3,optional" frugal:"3,optional,i32" json:"offset,omitempty"`
+	WithSnippet *bool  `thrift:"with_snippet,4,optional" frugal:"4,optional,bool" json:"with_snippet,omitempty"`
+}
+
+func NewSearchRequest() *SearchRequest {
+	return &SearchRequest{}
+}
+
+func (p *SearchRequest) InitDefault() {
+}
+
+func (p *SearchRequest) GetQuery() (v string) {
+	return p.Query
+}
+
+var SearchRequest_Limit_DEFAULT int32
+
+func (p *SearchRequest) GetLimit() (v int32) {
+	if !p.IsSetLimit() {
+		return SearchRequest_Limit_DEFAULT
+	}
+	return *p.Limit
+}
+
+var SearchRequest_Offset_DEFAULT int32
+
+func (p *SearchRequest) GetOffset() (v int32) {
+	if !p.IsSetOffset() {
+		return SearchRequest_Offset_DEFAULT
+	}
+	return *p.Offset
+}
+
+var SearchRequest_WithSnippet_DEFAULT bool
+
+func (p *SearchRequest) GetWithSnippet() (v bool) {
+	if !p.IsSetWithSnippet() {
+		return SearchRequest_WithSnippet_DEFAULT
+	}
+	return *p.WithSnippet
+}
+func (p *SearchRequest) SetQuery(val string) {
+	p.Query = val
+}
+func (p *SearchRequest) SetLimit(val *int32) {
+	p.Limit = val
+}
+func (p *SearchRequest) SetOffset(val *int32) {
+	p.Offset = val
+}
+func (p *SearchRequest) SetWithSnippet(val *bool) {
+	p.WithSnippet = val
+}
+
+func (p *SearchRequest) IsSetLimit() bool {
+	return p.Limit != nil
+}
+
+func (p *SearchRequest) IsSetOffset() bool {
+	return p.Offset != nil
+}
+
+func (p *SearchRequest) IsSetWithSnippet() bool {
+	return p.WithSnippet != nil
+}
+
+func (p *SearchRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("SearchRequest(%+v)", *p)
+}
+
+var fieldIDToName_SearchRequest = map[int16]string{
+	1: "query",
+	2: "limit",
+	3: "offset",
+	4: "with_snippet",
+}
+
+type SearchResponse struct {
+	Items      []*common.SearchItem `thrift:"items,1" frugal:"1,default,list<common.SearchItem>" json:"items"`
+	Returned   int32                `thrift:"returned,2" frugal:"2,default,i32" json:"returned"`
+	NextOffset *int32               `thrift:"next_offset,3,optional" frugal:"3,optional,i32" json:"next_offset,omitempty"`
+}
+
+func NewSearchResponse() *SearchResponse {
+	return &SearchResponse{}
+}
+
+func (p *SearchResponse) InitDefault() {
+}
+
+func (p *SearchResponse) GetItems() (v []*common.SearchItem) {
+	return p.Items
+}
+
+func (p *SearchResponse) GetReturned() (v int32) {
+	return p.Returned
+}
+
+var SearchResponse_NextOffset_DEFAULT int32
+
+func (p *SearchResponse) GetNextOffset() (v int32) {
+	if !p.IsSetNextOffset() {
+		return SearchResponse_NextOffset_DEFAULT
+	}
+	return *p.NextOffset
+}
+func (p *SearchResponse) SetItems(val []*common.SearchItem) {
+	p.Items = val
+}
+func (p *SearchResponse) SetReturned(val int32) {
+	p.Returned = val
+}
+func (p *SearchResponse) SetNextOffset(val *int32) {
+	p.NextOffset = val
+}
+
+func (p *SearchResponse) IsSetNextOffset() bool {
+	return p.NextOffset != nil
+}
+
+func (p *SearchResponse) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("SearchResponse(%+v)", *p)
+}
+
+var fieldIDToName_SearchResponse = map[int16]string{
+	1: "items",
+	2: "returned",
+	3: "next_offset",
+}
+
+type InfoResponse struct {
+	Stats map[string]string `thrift:"stats,1" frugal:"1,default,map<string:string>" json:"stats"`
+}
+
+func NewInfoResponse() *InfoResponse {
+	return &InfoResponse{}
+}
+
+func (p *InfoResponse) InitDefault() {
+}
+
+func (p *InfoResponse) GetStats() (v map[string]string) {
+	return p.Stats
+}
+func (p *InfoResponse) SetStats(val map[string]string) {
+	p.Stats = val
+}
+
+func (p *InfoResponse) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("InfoResponse(%+v)", *p)
+}
+
+var fieldIDToName_InfoResponse = map[int16]string{
+	1: "stats",
+}
+
 type KBService interface {
-	AddDoc(ctx context.Context, title string, content string) (r *common.KBDoc, err error)
+	AddDoc(ctx context.Context, req *AddDocRequest) (r *common.KBDoc, err error)
 
-	UpdateDoc(ctx context.Context, id string, title string, content string) (r *common.KBDoc, err error)
+	UpdateDoc(ctx context.Context, req *UpdateDocRequest) (r *common.KBDoc, err error)
 
-	DeleteDoc(ctx context.Context, id string) (err error)
+	DeleteDoc(ctx context.Context, req *DeleteDocRequest) (r *DeleteDocResponse, err error)
 
-	Search(ctx context.Context, query string, limit int32) (r []*common.SearchItem, err error)
+	Search(ctx context.Context, req *SearchRequest) (r *SearchResponse, err error)
 
-	Info(ctx context.Context) (r map[string]string, err error)
+	Info(ctx context.Context) (r *InfoResponse, err error)
 }
 
 type KBServiceAddDocArgs struct {
-	Title   string `thrift:"title,1" frugal:"1,default,string" json:"title"`
-	Content string `thrift:"content,2" frugal:"2,default,string" json:"content"`
+	Req *AddDocRequest `thrift:"req,1" frugal:"1,default,AddDocRequest" json:"req"`
 }
 
 func NewKBServiceAddDocArgs() *KBServiceAddDocArgs {
@@ -32,18 +396,20 @@ func NewKBServiceAddDocArgs() *KBServiceAddDocArgs {
 func (p *KBServiceAddDocArgs) InitDefault() {
 }
 
-func (p *KBServiceAddDocArgs) GetTitle() (v string) {
-	return p.Title
+var KBServiceAddDocArgs_Req_DEFAULT *AddDocRequest
+
+func (p *KBServiceAddDocArgs) GetReq() (v *AddDocRequest) {
+	if !p.IsSetReq() {
+		return KBServiceAddDocArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *KBServiceAddDocArgs) SetReq(val *AddDocRequest) {
+	p.Req = val
 }
 
-func (p *KBServiceAddDocArgs) GetContent() (v string) {
-	return p.Content
-}
-func (p *KBServiceAddDocArgs) SetTitle(val string) {
-	p.Title = val
-}
-func (p *KBServiceAddDocArgs) SetContent(val string) {
-	p.Content = val
+func (p *KBServiceAddDocArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *KBServiceAddDocArgs) String() string {
@@ -54,8 +420,7 @@ func (p *KBServiceAddDocArgs) String() string {
 }
 
 var fieldIDToName_KBServiceAddDocArgs = map[int16]string{
-	1: "title",
-	2: "content",
+	1: "req",
 }
 
 type KBServiceAddDocResult struct {
@@ -115,9 +480,7 @@ var fieldIDToName_KBServiceAddDocResult = map[int16]string{
 }
 
 type KBServiceUpdateDocArgs struct {
-	Id      string `thrift:"id,1" frugal:"1,default,string" json:"id"`
-	Title   string `thrift:"title,2" frugal:"2,default,string" json:"title"`
-	Content string `thrift:"content,3" frugal:"3,default,string" json:"content"`
+	Req *UpdateDocRequest `thrift:"req,1" frugal:"1,default,UpdateDocRequest" json:"req"`
 }
 
 func NewKBServiceUpdateDocArgs() *KBServiceUpdateDocArgs {
@@ -127,25 +490,20 @@ func NewKBServiceUpdateDocArgs() *KBServiceUpdateDocArgs {
 func (p *KBServiceUpdateDocArgs) InitDefault() {
 }
 
-func (p *KBServiceUpdateDocArgs) GetId() (v string) {
-	return p.Id
+var KBServiceUpdateDocArgs_Req_DEFAULT *UpdateDocRequest
+
+func (p *KBServiceUpdateDocArgs) GetReq() (v *UpdateDocRequest) {
+	if !p.IsSetReq() {
+		return KBServiceUpdateDocArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *KBServiceUpdateDocArgs) SetReq(val *UpdateDocRequest) {
+	p.Req = val
 }
 
-func (p *KBServiceUpdateDocArgs) GetTitle() (v string) {
-	return p.Title
-}
-
-func (p *KBServiceUpdateDocArgs) GetContent() (v string) {
-	return p.Content
-}
-func (p *KBServiceUpdateDocArgs) SetId(val string) {
-	p.Id = val
-}
-func (p *KBServiceUpdateDocArgs) SetTitle(val string) {
-	p.Title = val
-}
-func (p *KBServiceUpdateDocArgs) SetContent(val string) {
-	p.Content = val
+func (p *KBServiceUpdateDocArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *KBServiceUpdateDocArgs) String() string {
@@ -156,9 +514,7 @@ func (p *KBServiceUpdateDocArgs) String() string {
 }
 
 var fieldIDToName_KBServiceUpdateDocArgs = map[int16]string{
-	1: "id",
-	2: "title",
-	3: "content",
+	1: "req",
 }
 
 type KBServiceUpdateDocResult struct {
@@ -218,7 +574,7 @@ var fieldIDToName_KBServiceUpdateDocResult = map[int16]string{
 }
 
 type KBServiceDeleteDocArgs struct {
-	Id string `thrift:"id,1" frugal:"1,default,string" json:"id"`
+	Req *DeleteDocRequest `thrift:"req,1" frugal:"1,default,DeleteDocRequest" json:"req"`
 }
 
 func NewKBServiceDeleteDocArgs() *KBServiceDeleteDocArgs {
@@ -228,11 +584,20 @@ func NewKBServiceDeleteDocArgs() *KBServiceDeleteDocArgs {
 func (p *KBServiceDeleteDocArgs) InitDefault() {
 }
 
-func (p *KBServiceDeleteDocArgs) GetId() (v string) {
-	return p.Id
+var KBServiceDeleteDocArgs_Req_DEFAULT *DeleteDocRequest
+
+func (p *KBServiceDeleteDocArgs) GetReq() (v *DeleteDocRequest) {
+	if !p.IsSetReq() {
+		return KBServiceDeleteDocArgs_Req_DEFAULT
+	}
+	return p.Req
 }
-func (p *KBServiceDeleteDocArgs) SetId(val string) {
-	p.Id = val
+func (p *KBServiceDeleteDocArgs) SetReq(val *DeleteDocRequest) {
+	p.Req = val
+}
+
+func (p *KBServiceDeleteDocArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *KBServiceDeleteDocArgs) String() string {
@@ -243,11 +608,12 @@ func (p *KBServiceDeleteDocArgs) String() string {
 }
 
 var fieldIDToName_KBServiceDeleteDocArgs = map[int16]string{
-	1: "id",
+	1: "req",
 }
 
 type KBServiceDeleteDocResult struct {
-	Err *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
+	Success *DeleteDocResponse   `thrift:"success,0,optional" frugal:"0,optional,DeleteDocResponse" json:"success,omitempty"`
+	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
 func NewKBServiceDeleteDocResult() *KBServiceDeleteDocResult {
@@ -255,6 +621,15 @@ func NewKBServiceDeleteDocResult() *KBServiceDeleteDocResult {
 }
 
 func (p *KBServiceDeleteDocResult) InitDefault() {
+}
+
+var KBServiceDeleteDocResult_Success_DEFAULT *DeleteDocResponse
+
+func (p *KBServiceDeleteDocResult) GetSuccess() (v *DeleteDocResponse) {
+	if !p.IsSetSuccess() {
+		return KBServiceDeleteDocResult_Success_DEFAULT
+	}
+	return p.Success
 }
 
 var KBServiceDeleteDocResult_Err_DEFAULT *common.ServiceError
@@ -265,8 +640,15 @@ func (p *KBServiceDeleteDocResult) GetErr() (v *common.ServiceError) {
 	}
 	return p.Err
 }
+func (p *KBServiceDeleteDocResult) SetSuccess(x interface{}) {
+	p.Success = x.(*DeleteDocResponse)
+}
 func (p *KBServiceDeleteDocResult) SetErr(val *common.ServiceError) {
 	p.Err = val
+}
+
+func (p *KBServiceDeleteDocResult) IsSetSuccess() bool {
+	return p.Success != nil
 }
 
 func (p *KBServiceDeleteDocResult) IsSetErr() bool {
@@ -281,12 +663,12 @@ func (p *KBServiceDeleteDocResult) String() string {
 }
 
 var fieldIDToName_KBServiceDeleteDocResult = map[int16]string{
+	0: "success",
 	1: "err",
 }
 
 type KBServiceSearchArgs struct {
-	Query string `thrift:"query,1" frugal:"1,default,string" json:"query"`
-	Limit int32  `thrift:"limit,2" frugal:"2,default,i32" json:"limit"`
+	Req *SearchRequest `thrift:"req,1" frugal:"1,default,SearchRequest" json:"req"`
 }
 
 func NewKBServiceSearchArgs() *KBServiceSearchArgs {
@@ -296,18 +678,20 @@ func NewKBServiceSearchArgs() *KBServiceSearchArgs {
 func (p *KBServiceSearchArgs) InitDefault() {
 }
 
-func (p *KBServiceSearchArgs) GetQuery() (v string) {
-	return p.Query
+var KBServiceSearchArgs_Req_DEFAULT *SearchRequest
+
+func (p *KBServiceSearchArgs) GetReq() (v *SearchRequest) {
+	if !p.IsSetReq() {
+		return KBServiceSearchArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *KBServiceSearchArgs) SetReq(val *SearchRequest) {
+	p.Req = val
 }
 
-func (p *KBServiceSearchArgs) GetLimit() (v int32) {
-	return p.Limit
-}
-func (p *KBServiceSearchArgs) SetQuery(val string) {
-	p.Query = val
-}
-func (p *KBServiceSearchArgs) SetLimit(val int32) {
-	p.Limit = val
+func (p *KBServiceSearchArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *KBServiceSearchArgs) String() string {
@@ -318,12 +702,11 @@ func (p *KBServiceSearchArgs) String() string {
 }
 
 var fieldIDToName_KBServiceSearchArgs = map[int16]string{
-	1: "query",
-	2: "limit",
+	1: "req",
 }
 
 type KBServiceSearchResult struct {
-	Success []*common.SearchItem `thrift:"success,0,optional" frugal:"0,optional,list<common.SearchItem>" json:"success,omitempty"`
+	Success *SearchResponse      `thrift:"success,0,optional" frugal:"0,optional,SearchResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -334,9 +717,9 @@ func NewKBServiceSearchResult() *KBServiceSearchResult {
 func (p *KBServiceSearchResult) InitDefault() {
 }
 
-var KBServiceSearchResult_Success_DEFAULT []*common.SearchItem
+var KBServiceSearchResult_Success_DEFAULT *SearchResponse
 
-func (p *KBServiceSearchResult) GetSuccess() (v []*common.SearchItem) {
+func (p *KBServiceSearchResult) GetSuccess() (v *SearchResponse) {
 	if !p.IsSetSuccess() {
 		return KBServiceSearchResult_Success_DEFAULT
 	}
@@ -352,7 +735,7 @@ func (p *KBServiceSearchResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *KBServiceSearchResult) SetSuccess(x interface{}) {
-	p.Success = x.([]*common.SearchItem)
+	p.Success = x.(*SearchResponse)
 }
 func (p *KBServiceSearchResult) SetErr(val *common.ServiceError) {
 	p.Err = val
@@ -398,7 +781,7 @@ func (p *KBServiceInfoArgs) String() string {
 var fieldIDToName_KBServiceInfoArgs = map[int16]string{}
 
 type KBServiceInfoResult struct {
-	Success map[string]string    `thrift:"success,0,optional" frugal:"0,optional,map<string:string>" json:"success,omitempty"`
+	Success *InfoResponse        `thrift:"success,0,optional" frugal:"0,optional,InfoResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -409,9 +792,9 @@ func NewKBServiceInfoResult() *KBServiceInfoResult {
 func (p *KBServiceInfoResult) InitDefault() {
 }
 
-var KBServiceInfoResult_Success_DEFAULT map[string]string
+var KBServiceInfoResult_Success_DEFAULT *InfoResponse
 
-func (p *KBServiceInfoResult) GetSuccess() (v map[string]string) {
+func (p *KBServiceInfoResult) GetSuccess() (v *InfoResponse) {
 	if !p.IsSetSuccess() {
 		return KBServiceInfoResult_Success_DEFAULT
 	}
@@ -427,7 +810,7 @@ func (p *KBServiceInfoResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *KBServiceInfoResult) SetSuccess(x interface{}) {
-	p.Success = x.(map[string]string)
+	p.Success = x.(*InfoResponse)
 }
 func (p *KBServiceInfoResult) SetErr(val *common.ServiceError) {
 	p.Err = val

@@ -6,12 +6,14 @@ import (
 	"context"
 	client "github.com/cloudwego/kitex/client"
 	callopt "github.com/cloudwego/kitex/client/callopt"
+	ai "github.com/gogogo1024/assist-fusion/kitex_gen/ai"
 	common "github.com/gogogo1024/assist-fusion/kitex_gen/common"
 )
 
 // Client is designed to provide IDL-compatible methods with call-option parameter for kitex framework.
 type Client interface {
 	Embeddings(ctx context.Context, req *common.EmbeddingRequest, callOptions ...callopt.Option) (r *common.EmbeddingResponse, err error)
+	Chat(ctx context.Context, req *ai.ChatRequest, callOptions ...callopt.Option) (r *ai.ChatResponse, err error)
 }
 
 // NewClient creates a client for the service defined in IDL.
@@ -46,4 +48,9 @@ type kAIServiceClient struct {
 func (p *kAIServiceClient) Embeddings(ctx context.Context, req *common.EmbeddingRequest, callOptions ...callopt.Option) (r *common.EmbeddingResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
 	return p.kClient.Embeddings(ctx, req)
+}
+
+func (p *kAIServiceClient) Chat(ctx context.Context, req *ai.ChatRequest, callOptions ...callopt.Option) (r *ai.ChatResponse, err error) {
+	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
+	return p.kClient.Chat(ctx, req)
 }

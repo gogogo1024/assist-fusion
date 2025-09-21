@@ -301,9 +301,10 @@ var fieldIDToName_Ticket = map[int16]string{
 }
 
 type KBDoc struct {
-	Id      string `thrift:"id,1" frugal:"1,default,string" json:"id"`
-	Title   string `thrift:"title,2" frugal:"2,default,string" json:"title"`
-	Content string `thrift:"content,3" frugal:"3,default,string" json:"content"`
+	Id      string            `thrift:"id,1" frugal:"1,default,string" json:"id"`
+	Title   string            `thrift:"title,2" frugal:"2,default,string" json:"title"`
+	Content string            `thrift:"content,3" frugal:"3,default,string" json:"content"`
+	Tags    map[string]string `thrift:"tags,4,optional" frugal:"4,optional,map<string:string>" json:"tags,omitempty"`
 }
 
 func NewKBDoc() *KBDoc {
@@ -324,6 +325,15 @@ func (p *KBDoc) GetTitle() (v string) {
 func (p *KBDoc) GetContent() (v string) {
 	return p.Content
 }
+
+var KBDoc_Tags_DEFAULT map[string]string
+
+func (p *KBDoc) GetTags() (v map[string]string) {
+	if !p.IsSetTags() {
+		return KBDoc_Tags_DEFAULT
+	}
+	return p.Tags
+}
 func (p *KBDoc) SetId(val string) {
 	p.Id = val
 }
@@ -332,6 +342,13 @@ func (p *KBDoc) SetTitle(val string) {
 }
 func (p *KBDoc) SetContent(val string) {
 	p.Content = val
+}
+func (p *KBDoc) SetTags(val map[string]string) {
+	p.Tags = val
+}
+
+func (p *KBDoc) IsSetTags() bool {
+	return p.Tags != nil
 }
 
 func (p *KBDoc) String() string {
@@ -345,6 +362,7 @@ var fieldIDToName_KBDoc = map[int16]string{
 	1: "id",
 	2: "title",
 	3: "content",
+	4: "tags",
 }
 
 type SearchItem struct {
@@ -442,8 +460,9 @@ var fieldIDToName_EmbeddingRequest = map[int16]string{
 }
 
 type EmbeddingResponse struct {
-	Vectors [][]float64 `thrift:"vectors,1" frugal:"1,default,list<list<double>>" json:"vectors"`
-	Dim     int32       `thrift:"dim,2" frugal:"2,default,i32" json:"dim"`
+	Vectors [][]float64     `thrift:"vectors,1" frugal:"1,default,list<list<double>>" json:"vectors"`
+	Dim     int32           `thrift:"dim,2" frugal:"2,default,i32" json:"dim"`
+	Usage   *EmbeddingUsage `thrift:"usage,3,optional" frugal:"3,optional,EmbeddingUsage" json:"usage,omitempty"`
 }
 
 func NewEmbeddingResponse() *EmbeddingResponse {
@@ -460,11 +479,27 @@ func (p *EmbeddingResponse) GetVectors() (v [][]float64) {
 func (p *EmbeddingResponse) GetDim() (v int32) {
 	return p.Dim
 }
+
+var EmbeddingResponse_Usage_DEFAULT *EmbeddingUsage
+
+func (p *EmbeddingResponse) GetUsage() (v *EmbeddingUsage) {
+	if !p.IsSetUsage() {
+		return EmbeddingResponse_Usage_DEFAULT
+	}
+	return p.Usage
+}
 func (p *EmbeddingResponse) SetVectors(val [][]float64) {
 	p.Vectors = val
 }
 func (p *EmbeddingResponse) SetDim(val int32) {
 	p.Dim = val
+}
+func (p *EmbeddingResponse) SetUsage(val *EmbeddingUsage) {
+	p.Usage = val
+}
+
+func (p *EmbeddingResponse) IsSetUsage() bool {
+	return p.Usage != nil
 }
 
 func (p *EmbeddingResponse) String() string {
@@ -477,11 +512,145 @@ func (p *EmbeddingResponse) String() string {
 var fieldIDToName_EmbeddingResponse = map[int16]string{
 	1: "vectors",
 	2: "dim",
+	3: "usage",
+}
+
+type EmbeddingUsage struct {
+	PromptTokens int32 `thrift:"prompt_tokens,1" frugal:"1,default,i32" json:"prompt_tokens"`
+	TotalTokens  int32 `thrift:"total_tokens,2" frugal:"2,default,i32" json:"total_tokens"`
+}
+
+func NewEmbeddingUsage() *EmbeddingUsage {
+	return &EmbeddingUsage{}
+}
+
+func (p *EmbeddingUsage) InitDefault() {
+}
+
+func (p *EmbeddingUsage) GetPromptTokens() (v int32) {
+	return p.PromptTokens
+}
+
+func (p *EmbeddingUsage) GetTotalTokens() (v int32) {
+	return p.TotalTokens
+}
+func (p *EmbeddingUsage) SetPromptTokens(val int32) {
+	p.PromptTokens = val
+}
+func (p *EmbeddingUsage) SetTotalTokens(val int32) {
+	p.TotalTokens = val
+}
+
+func (p *EmbeddingUsage) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("EmbeddingUsage(%+v)", *p)
+}
+
+var fieldIDToName_EmbeddingUsage = map[int16]string{
+	1: "prompt_tokens",
+	2: "total_tokens",
+}
+
+type Pagination struct {
+	Page     int32 `thrift:"page,1" frugal:"1,default,i32" json:"page"`
+	PageSize int32 `thrift:"page_size,2" frugal:"2,default,i32" json:"page_size"`
+}
+
+func NewPagination() *Pagination {
+	return &Pagination{}
+}
+
+func (p *Pagination) InitDefault() {
+}
+
+func (p *Pagination) GetPage() (v int32) {
+	return p.Page
+}
+
+func (p *Pagination) GetPageSize() (v int32) {
+	return p.PageSize
+}
+func (p *Pagination) SetPage(val int32) {
+	p.Page = val
+}
+func (p *Pagination) SetPageSize(val int32) {
+	p.PageSize = val
+}
+
+func (p *Pagination) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("Pagination(%+v)", *p)
+}
+
+var fieldIDToName_Pagination = map[int16]string{
+	1: "page",
+	2: "page_size",
+}
+
+type PageInfo struct {
+	Page       int32 `thrift:"page,1" frugal:"1,default,i32" json:"page"`
+	PageSize   int32 `thrift:"page_size,2" frugal:"2,default,i32" json:"page_size"`
+	TotalItems int32 `thrift:"total_items,3" frugal:"3,default,i32" json:"total_items"`
+	TotalPages int32 `thrift:"total_pages,4" frugal:"4,default,i32" json:"total_pages"`
+}
+
+func NewPageInfo() *PageInfo {
+	return &PageInfo{}
+}
+
+func (p *PageInfo) InitDefault() {
+}
+
+func (p *PageInfo) GetPage() (v int32) {
+	return p.Page
+}
+
+func (p *PageInfo) GetPageSize() (v int32) {
+	return p.PageSize
+}
+
+func (p *PageInfo) GetTotalItems() (v int32) {
+	return p.TotalItems
+}
+
+func (p *PageInfo) GetTotalPages() (v int32) {
+	return p.TotalPages
+}
+func (p *PageInfo) SetPage(val int32) {
+	p.Page = val
+}
+func (p *PageInfo) SetPageSize(val int32) {
+	p.PageSize = val
+}
+func (p *PageInfo) SetTotalItems(val int32) {
+	p.TotalItems = val
+}
+func (p *PageInfo) SetTotalPages(val int32) {
+	p.TotalPages = val
+}
+
+func (p *PageInfo) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("PageInfo(%+v)", *p)
+}
+
+var fieldIDToName_PageInfo = map[int16]string{
+	1: "page",
+	2: "page_size",
+	3: "total_items",
+	4: "total_pages",
 }
 
 type ServiceError struct {
-	Code    string `thrift:"code,1" frugal:"1,default,string" json:"code"`
-	Message string `thrift:"message,2" frugal:"2,default,string" json:"message"`
+	Code    string            `thrift:"code,1" frugal:"1,default,string" json:"code"`
+	Message string            `thrift:"message,2" frugal:"2,default,string" json:"message"`
+	Meta    map[string]string `thrift:"meta,3,optional" frugal:"3,optional,map<string:string>" json:"meta,omitempty"`
 }
 
 func NewServiceError() *ServiceError {
@@ -498,11 +667,27 @@ func (p *ServiceError) GetCode() (v string) {
 func (p *ServiceError) GetMessage() (v string) {
 	return p.Message
 }
+
+var ServiceError_Meta_DEFAULT map[string]string
+
+func (p *ServiceError) GetMeta() (v map[string]string) {
+	if !p.IsSetMeta() {
+		return ServiceError_Meta_DEFAULT
+	}
+	return p.Meta
+}
 func (p *ServiceError) SetCode(val string) {
 	p.Code = val
 }
 func (p *ServiceError) SetMessage(val string) {
 	p.Message = val
+}
+func (p *ServiceError) SetMeta(val map[string]string) {
+	p.Meta = val
+}
+
+func (p *ServiceError) IsSetMeta() bool {
+	return p.Meta != nil
 }
 
 func (p *ServiceError) String() string {
@@ -518,4 +703,5 @@ func (p *ServiceError) Error() string {
 var fieldIDToName_ServiceError = map[int16]string{
 	1: "code",
 	2: "message",
+	3: "meta",
 }

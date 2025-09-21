@@ -1,6 +1,6 @@
 ## KB × Elasticsearch 本地快速验证
 
-本地用单节点 ES（无鉴权）快速验证 ticket-svc 的 KB 生产后端。
+本地用单节点 ES（无鉴权）快速验证 Gateway (本地模式或 RPC 聚合) 的 KB ES 后端。
 
 ### 1) 启动 ES（Docker）
 
@@ -10,10 +10,10 @@ mise run es-up
 
 等待 9200 端口就绪（首次需几十秒）。
 
-### 2) 启动 ticket-svc（ES 模式）
+### 2) 启动 gateway（ES 模式）
 
 ```sh
-mise run run-ticket-es
+KB_BACKEND=es ES_ADDRS=http://localhost:9200 ES_INDEX=kb_docs HTTP_ADDR=:8081 go run ./services/gateway
 ```
 
 该任务会设置环境变量：
@@ -24,7 +24,6 @@ mise run run-ticket-es
 ### 3) 验证 API
 
 ```sh
-# 写入文档
 curl -s -X POST http://localhost:8081/v1/docs \
   -H 'Content-Type: application/json' \
   -d '{"title":"FAQ","content":"重启路由器试试"}'

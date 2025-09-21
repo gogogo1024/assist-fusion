@@ -12,6 +12,8 @@ type Config struct {
 	AIProvider   string
 	AIAPIKey     string
 	OtelEndpoint string
+	// Consul registry address (single)
+	RegistryAddr string
 	// KB backend selection: "memory" (default) or "es"
 	KBBackend string
 	// Elasticsearch settings for KB when KBBackend=="es"
@@ -45,6 +47,7 @@ func LoadConfig() *Config {
 		AIProvider:    getenv("AI_PROVIDER", "mock"),
 		AIAPIKey:      getenv("AI_API_KEY", ""),
 		OtelEndpoint:  getenv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
+		RegistryAddr:  getenv("CONSUL_ADDR", "127.0.0.1:8500"),
 		KBBackend:     getenv("KB_BACKEND", "memory"),
 		ESAddrs:       addrs,
 		ESIndex:       getenv("ES_INDEX", "kb_docs"),

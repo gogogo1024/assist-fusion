@@ -3,11 +3,13 @@ package gateway
 import (
 	"context"
 
-	"github.com/cloudwego/kitex/client"
-	"github.com/gogogo1024/assist-fusion/internal/common"
+	icommon "github.com/gogogo1024/assist-fusion/internal/common"
+	grc "github.com/gogogo1024/assist-fusion/internal/gateway/rpc"
 	"github.com/gogogo1024/assist-fusion/kitex_gen/ai/aiservice"
 	kcommon "github.com/gogogo1024/assist-fusion/kitex_gen/common"
+	"github.com/gogogo1024/assist-fusion/kitex_gen/kb"
 	"github.com/gogogo1024/assist-fusion/kitex_gen/kb/kbservice"
+	"github.com/gogogo1024/assist-fusion/kitex_gen/ticket"
 	"github.com/gogogo1024/assist-fusion/kitex_gen/ticket/ticketservice"
 )
 
@@ -39,71 +41,134 @@ type AIAPI interface {
 
 // ----- RPC implementations -----
 
-type rpcClients struct {
-	ticket ticketservice.Client
-	kb     kbservice.Client
-	ai     aiservice.Client
-}
-
-func NewRPCClients(cfg *common.Config) (*rpcClients, error) {
-	tCli, err := ticketservice.NewClient("ticket-rpc", client.WithHostPorts(cfg.TicketRPCAddr))
-	if err != nil {
-		return nil, err
-	}
-	kCli, err := kbservice.NewClient("kb-rpc", client.WithHostPorts(cfg.KBRPCAddr))
-	if err != nil {
-		return nil, err
-	}
-	aCli, err := aiservice.NewClient("ai-rpc", client.WithHostPorts(cfg.AIRPCAddr))
-	if err != nil {
-		return nil, err
-	}
-	return &rpcClients{ticket: tCli, kb: kCli, ai: aCli}, nil
-}
+// rpcClients removed: now using centralized gateway/rpc Init
 
 // TicketAPI (RPC)
 type ticketRPC struct{ c ticketservice.Client }
 
 func (t *ticketRPC) Create(ctx context.Context, title, desc, note string) (*kcommon.Ticket, error) {
-	return t.c.CreateTicket(ctx, title, desc, note)
+	req := &ticket.CreateTicketRequest{Title: title, Desc: desc}
+	if note != "" {
+		req.Note = &note
+	}
+	resp, err := t.c.CreateTicket(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetTicket(), nil
 }
 func (t *ticketRPC) Get(ctx context.Context, id string) (*kcommon.Ticket, error) {
-	return t.c.GetTicket(ctx, id)
+	resp, err := t.c.GetTicket(ctx, &ticket.GetTicketRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetTicket(), nil
 }
-func (t *ticketRPC) List(ctx context.Context) ([]*kcommon.Ticket, error) { return t.c.ListTickets(ctx) }
+func (t *ticketRPC) List(ctx context.Context) ([]*kcommon.Ticket, error) {
+	resp, err := t.c.ListTickets(ctx, &ticket.ListTicketsRequest{})
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetTickets(), nil
+}
 func (t *ticketRPC) Assign(ctx context.Context, id, note string) (*kcommon.Ticket, error) {
-	return t.c.Assign(ctx, id, note)
+	req := &ticket.TicketActionRequest{Id: id}
+	if note != "" {
+		req.Note = &note
+	}
+	resp, err := t.c.Assign(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetTicket(), nil
 }
 func (t *ticketRPC) Resolve(ctx context.Context, id, note string) (*kcommon.Ticket, error) {
-	return t.c.Resolve(ctx, id, note)
+	req := &ticket.TicketActionRequest{Id: id}
+	if note != "" {
+		req.Note = &note
+	}
+	resp, err := t.c.Resolve(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetTicket(), nil
 }
 func (t *ticketRPC) Escalate(ctx context.Context, id, note string) (*kcommon.Ticket, error) {
-	return t.c.Escalate(ctx, id, note)
+	req := &ticket.TicketActionRequest{Id: id}
+	if note != "" {
+		req.Note = &note
+	}
+	resp, err := t.c.Escalate(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetTicket(), nil
 }
 func (t *ticketRPC) Reopen(ctx context.Context, id, note string) (*kcommon.Ticket, error) {
-	return t.c.Reopen(ctx, id, note)
+	req := &ticket.TicketActionRequest{Id: id}
+	if note != "" {
+		req.Note = &note
+	}
+	resp, err := t.c.Reopen(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetTicket(), nil
 }
 func (t *ticketRPC) Cycles(ctx context.Context, id string) ([]*kcommon.TicketCycle, error) {
-	return t.c.GetCycles(ctx, id)
+	return t.c.GetCycles(ctx, &ticket.GetCyclesRequest{Id: id})
 }
 func (t *ticketRPC) Events(ctx context.Context, id string) ([]*kcommon.TicketEvent, error) {
-	return t.c.GetEvents(ctx, id)
+	return t.c.GetEvents(ctx, &ticket.GetEventsRequest{Id: id})
 }
 
 // KBAPI (RPC)
 type kbRPC struct{ c kbservice.Client }
 
 func (k *kbRPC) Add(ctx context.Context, title, content string) (*kcommon.KBDoc, error) {
-	return k.c.AddDoc(ctx, title, content)
+	req := &kb.AddDocRequest{Title: title, Content: content}
+	resp, err := k.c.AddDoc(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 func (k *kbRPC) Update(ctx context.Context, id, title, content string) (*kcommon.KBDoc, error) {
-	return k.c.UpdateDoc(ctx, id, title, content)
+	req := &kb.UpdateDocRequest{Id: id}
+	if title != "" {
+		req.Title = &title
+	}
+	if content != "" {
+		req.Content = &content
+	}
+	resp, err := k.c.UpdateDoc(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
-func (k *kbRPC) Delete(ctx context.Context, id string) error { return k.c.DeleteDoc(ctx, id) }
+func (k *kbRPC) Delete(ctx context.Context, id string) error {
+	_, err := k.c.DeleteDoc(ctx, &kb.DeleteDocRequest{Id: id})
+	return err
+}
 func (k *kbRPC) Search(ctx context.Context, q string, limit int32) ([]*kcommon.SearchItem, error) {
-	return k.c.Search(ctx, q, limit)
+	req := &kb.SearchRequest{Query: q}
+	if limit > 0 {
+		req.Limit = &limit
+	}
+	resp, err := k.c.Search(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Items, nil
 }
-func (k *kbRPC) Info(ctx context.Context) (map[string]string, error) { return k.c.Info(ctx) }
+func (k *kbRPC) Info(ctx context.Context) (map[string]string, error) {
+	resp, err := k.c.Info(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Stats, nil
+}
 
 // AIAPI (RPC)
 type aiRPC struct{ c aiservice.Client }
@@ -119,12 +184,11 @@ type RPCAdapter struct {
 	AI     AIAPI
 }
 
-func NewRPCAdapter(cfg *common.Config) (*RPCAdapter, error) {
-	cs, err := NewRPCClients(cfg)
-	if err != nil {
+func NewRPCAdapter(cfg *icommon.Config) (*RPCAdapter, error) {
+	if err := grc.Init(cfg); err != nil {
 		return nil, err
 	}
-	return &RPCAdapter{Ticket: &ticketRPC{c: cs.ticket}, KB: &kbRPC{c: cs.kb}, AI: &aiRPC{c: cs.ai}}, nil
+	return &RPCAdapter{Ticket: &ticketRPC{c: grc.TicketClient}, KB: &kbRPC{c: grc.KBClient}, AI: &aiRPC{c: grc.AIClient}}, nil
 }
 
 // end of adapters.go

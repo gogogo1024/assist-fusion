@@ -6,10 +6,11 @@
 
 日期：2025-09-12
 
-本文描述 kb-svc 与 ai-svc 的最小可用接口，便于后续实现与对接。
+本文描述 gateway 聚合的 KB 与 AI 域（以及底层 kb-rpc / ai-rpc 服务）的最小可用接口，便于后续实现与对接。
 
-## ticket-svc
-- Base: http://localhost:8081
+## Ticket 域（经 Gateway 暴露 / 或直接调 RPC）
+- HTTP Base (Gateway 本地模式): http://localhost:8081
+- RPC Service: ticket-rpc (Thrift / Kitex)
 - 数据模型（摘要）
   - Ticket
     - 顶层快照：ID, Title, Desc, Status, CreatedAt, AssignedAt, ResolvedAt, EscalatedAt, ReopenedAt
@@ -63,8 +64,9 @@ curl -s "$BASE/v1/tickets/$ID/cycles" | tee /tmp/ticket-cycles.json
 curl -s "$BASE/v1/tickets/$ID/events" | tee /tmp/ticket-events.json
 ```
 
-## kb-svc
-- Base: 当前由 ticket-svc 暴露 (http://localhost:8081)
+## 知识库（经 Gateway 暴露 / 或 KBService RPC）
+- HTTP Base (Gateway 本地或 RPC 聚合): http://localhost:8081
+- RPC Service: kb-rpc
 - 语义说明
   - 文档写入为 Upsert：同一 ID 再次写入会原子性替换旧内容，同时撤销旧内容在倒排索引中的贡献，避免索引泄漏。
   - 检索：
@@ -87,8 +89,9 @@ curl -s -X POST "$BASE/v1/docs" -H 'Content-Type: application/json' \
 curl -s "$BASE/v1/search?q=客服&limit=10" | tee /tmp/kb-search.json
 ```
 
-## ai-svc
-- Base: http://localhost:8083
+## AI（Embeddings / Chat）
+- HTTP Base (Gateway 聚合): http://localhost:8081
+- RPC Service: ai-rpc
 - Endpoints
   - POST /v1/embeddings
     - Request: { texts: string[], model?: string }

@@ -2,18 +2,25 @@
 
 > 统一单体（Modular Monolith）策略：当前阶段聚焦功能迭代与领域模型清晰度，避免过早拆分微服务。KB 支持内存与 Elasticsearch 双后端，默认尝试 IK 分词，失败回退 n-gram（最小 3）并带 edge_ngram 自动补全。 
 
-## 项目结构
+## 项目结构（已完成 RPC 重构）
 
-- `services/`
-  - `gateway`：统一 HTTP 入口（原 ticket-svc 转型），路由与聚合，FEATURE_RPC=on 时转发至下游 Kitex 服务
-  - `ticket-rpc`：工单 RPC 服务（Kitex）
-  - `kb-rpc`：知识库 RPC 服务（Kitex）
-  - `ai-rpc`：AI / Embeddings RPC 服务（Kitex）
-- `internal/common/`：配置、日志、中间件、仓储接口
-- `airflow/dags/`：知识入库DAG，调用kb-svc和ai-svc
-- `Makefile`：一键启动/测试/依赖管理
-- `tests/`：单元测试，默认内存实现
- - `docs/chat/`：文档与指南
+> 历史说明：早期单体入口目录 `services/ticket-svc/` 已在重构后移除（由 `services/gateway/` 统一承担 HTTP 入口 + 聚合角色）。如需查看旧实现，可在 Git 历史中检索该路径。
+
+- `services/gateway/`：统一 HTTP 入口（原单体入口演进）。当设置 `FEATURE_RPC=true` 时作为 BFF 转发到下游 Kitex RPC 服务，否则直接内嵌内存实现。
+- `rpc/`
+  - `ticket/`
+    - `main.go`：Ticket RPC 服务入口（package main）
+    - `impl/impl.go`：TicketServiceImpl 业务实现，可被内部工具直接 import（避免 package main 限制）
+  - `kb/`：同上（KBServiceImpl）
+  - `ai/`：同上（AIServiceImpl）
+- `idl/`：Thrift 定义（ticket.thrift / kb.thrift / ai.thrift / common.thrift）
+- `kitex_gen/`：统一生成代码目录（多服务共享）
+- `internal/`：领域与通用模块（配置 / 仓储 / 观测 / 内存实现等）
+- `cmd/rpc-probe/`：内部探针 / 内联启动多个 RPC 进行集成验证（直接 import `rpc/<svc>/impl`）
+- `airflow/dags/`：知识入库 DAG 示例
+- `docs/chat/`：文档与指南
+- `Makefile`：run / build / regen 任务
+- `tests/`：单元 / 集成测试（待扩展）
 
 ## 快速开始（使用 mise）
 
@@ -24,11 +31,11 @@
 mise run bootstrap
 
 # 启动 gateway（内存 KB，监听 :8081）
-mise run run-ticket   # 兼容旧命名脚本；后续可重命名为 run-gateway
+mise run run-gateway
 
 # 启动带 Elasticsearch 的 gateway（本地需要 Docker）
 mise run es-up
-mise run run-ticket-es
+mise run run-gateway-es
 # 关闭 ES
 mise run es-down
 
@@ -189,8 +196,8 @@ PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway
 - 提示：右上角会出现轻量提示；失败将显示错误码或原因。
 
 ## eino集成说明
-- ai-svc内置eino编排，支持多Provider（OpenAI/火山/本地），可通过环境变量AI_PROVIDER切换。
-- 默认mock provider，无需外部大模型即可本地跑通。
+- ai-rpc (rpc/ai) 计划集成 eino 编排，支持多 Provider（OpenAI / 火山 / 本地），可通过环境变量 AI_PROVIDER 切换。
+- 当前已提供 mock embeddings，无需外部大模型即可本地跑通；Chat 暂返回 not_implemented。
 
 ## Airflow使用
 - 将`airflow/dags/kb_ingest_dag.py`复制到Airflow的dags目录。
@@ -252,15 +259,38 @@ curl "http://localhost:8081/v1/search?q=安装&limit=5"   # 短查询应能命�
 mise run es-down
 ```
 
-## 代码生成（Kitex）
+## 代码生成（Kitex / Makefile 统一封装）
 
-已迁移模块路径：`github.com/gogogo1024/assist-fusion`
-示例（在仓库根目录）：
+模块路径：`github.com/gogogo1024/assist-fusion`
+
+推荐使用 Make 统一再生：
+```sh
+make regen        # 所有服务（ticket / kb / ai）
+make regen-ticket # 单个服务
+make regen-kb
+make regen-ai
+```
+底层等价 Kitex 命令（仅参考）：
 ```sh
 kitex -module github.com/gogogo1024/assist-fusion -service ticket-rpc idl/ticket.thrift
 kitex -module github.com/gogogo1024/assist-fusion -service kb-rpc idl/kb.thrift
 kitex -module github.com/gogogo1024/assist-fusion -service ai-rpc idl/ai.thrift
 ```
+
+实现放入 `impl/` 子目录的原因：
+1. 避免与 `main.go` 同目录出现 `package main` 导致无法被其它包导入。
+2. 内部工具（`cmd/rpc-probe`、未来的集成测试或基准测试）可直接复用 `New<Service>ServiceImpl()`。
+3. 后续若抽象接口层，可在 impl 中扩展多实现（内存 / ES / Mock）并由 main 组装。
+
+### 生成一致性校验
+
+为防止忘记提交生成代码，引入校验：
+
+```sh
+make verify-gen   # 若有漂移会退出非 0 并提示先提交 regen 结果
+```
+
+CI 建议：在 build 与 test 之后执行 `make verify-gen`，阻止 IDL 变更未 sync 的情况。
 
 ## Airflow 使用
 DAG 示例草案：`airflow/dags/kb_ingest_dag.py`（文档优先，运行前请按注释调整路径与依赖）。

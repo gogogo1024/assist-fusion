@@ -7,19 +7,20 @@ import (
 	client "github.com/cloudwego/kitex/client"
 	callopt "github.com/cloudwego/kitex/client/callopt"
 	common "github.com/gogogo1024/assist-fusion/kitex_gen/common"
+	ticket "github.com/gogogo1024/assist-fusion/kitex_gen/ticket"
 )
 
 // Client is designed to provide IDL-compatible methods with call-option parameter for kitex framework.
 type Client interface {
-	CreateTicket(ctx context.Context, title string, desc string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error)
-	GetTicket(ctx context.Context, id string, callOptions ...callopt.Option) (r *common.Ticket, err error)
-	ListTickets(ctx context.Context, callOptions ...callopt.Option) (r []*common.Ticket, err error)
-	Assign(ctx context.Context, id string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error)
-	Resolve(ctx context.Context, id string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error)
-	Escalate(ctx context.Context, id string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error)
-	Reopen(ctx context.Context, id string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error)
-	GetCycles(ctx context.Context, id string, callOptions ...callopt.Option) (r []*common.TicketCycle, err error)
-	GetEvents(ctx context.Context, id string, callOptions ...callopt.Option) (r []*common.TicketEvent, err error)
+	CreateTicket(ctx context.Context, req *ticket.CreateTicketRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error)
+	GetTicket(ctx context.Context, req *ticket.GetTicketRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error)
+	ListTickets(ctx context.Context, req *ticket.ListTicketsRequest, callOptions ...callopt.Option) (r *ticket.ListTicketsResponse, err error)
+	Assign(ctx context.Context, req *ticket.TicketActionRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error)
+	Resolve(ctx context.Context, req *ticket.TicketActionRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error)
+	Escalate(ctx context.Context, req *ticket.TicketActionRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error)
+	Reopen(ctx context.Context, req *ticket.TicketActionRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error)
+	GetCycles(ctx context.Context, req *ticket.GetCyclesRequest, callOptions ...callopt.Option) (r []*common.TicketCycle, err error)
+	GetEvents(ctx context.Context, req *ticket.GetEventsRequest, callOptions ...callopt.Option) (r []*common.TicketEvent, err error)
 }
 
 // NewClient creates a client for the service defined in IDL.
@@ -51,47 +52,47 @@ type kTicketServiceClient struct {
 	*kClient
 }
 
-func (p *kTicketServiceClient) CreateTicket(ctx context.Context, title string, desc string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error) {
+func (p *kTicketServiceClient) CreateTicket(ctx context.Context, req *ticket.CreateTicketRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.CreateTicket(ctx, title, desc, note)
+	return p.kClient.CreateTicket(ctx, req)
 }
 
-func (p *kTicketServiceClient) GetTicket(ctx context.Context, id string, callOptions ...callopt.Option) (r *common.Ticket, err error) {
+func (p *kTicketServiceClient) GetTicket(ctx context.Context, req *ticket.GetTicketRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.GetTicket(ctx, id)
+	return p.kClient.GetTicket(ctx, req)
 }
 
-func (p *kTicketServiceClient) ListTickets(ctx context.Context, callOptions ...callopt.Option) (r []*common.Ticket, err error) {
+func (p *kTicketServiceClient) ListTickets(ctx context.Context, req *ticket.ListTicketsRequest, callOptions ...callopt.Option) (r *ticket.ListTicketsResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.ListTickets(ctx)
+	return p.kClient.ListTickets(ctx, req)
 }
 
-func (p *kTicketServiceClient) Assign(ctx context.Context, id string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error) {
+func (p *kTicketServiceClient) Assign(ctx context.Context, req *ticket.TicketActionRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.Assign(ctx, id, note)
+	return p.kClient.Assign(ctx, req)
 }
 
-func (p *kTicketServiceClient) Resolve(ctx context.Context, id string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error) {
+func (p *kTicketServiceClient) Resolve(ctx context.Context, req *ticket.TicketActionRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.Resolve(ctx, id, note)
+	return p.kClient.Resolve(ctx, req)
 }
 
-func (p *kTicketServiceClient) Escalate(ctx context.Context, id string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error) {
+func (p *kTicketServiceClient) Escalate(ctx context.Context, req *ticket.TicketActionRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.Escalate(ctx, id, note)
+	return p.kClient.Escalate(ctx, req)
 }
 
-func (p *kTicketServiceClient) Reopen(ctx context.Context, id string, note string, callOptions ...callopt.Option) (r *common.Ticket, err error) {
+func (p *kTicketServiceClient) Reopen(ctx context.Context, req *ticket.TicketActionRequest, callOptions ...callopt.Option) (r *ticket.TicketResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.Reopen(ctx, id, note)
+	return p.kClient.Reopen(ctx, req)
 }
 
-func (p *kTicketServiceClient) GetCycles(ctx context.Context, id string, callOptions ...callopt.Option) (r []*common.TicketCycle, err error) {
+func (p *kTicketServiceClient) GetCycles(ctx context.Context, req *ticket.GetCyclesRequest, callOptions ...callopt.Option) (r []*common.TicketCycle, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.GetCycles(ctx, id)
+	return p.kClient.GetCycles(ctx, req)
 }
 
-func (p *kTicketServiceClient) GetEvents(ctx context.Context, id string, callOptions ...callopt.Option) (r []*common.TicketEvent, err error) {
+func (p *kTicketServiceClient) GetEvents(ctx context.Context, req *ticket.GetEventsRequest, callOptions ...callopt.Option) (r []*common.TicketEvent, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.GetEvents(ctx, id)
+	return p.kClient.GetEvents(ctx, req)
 }

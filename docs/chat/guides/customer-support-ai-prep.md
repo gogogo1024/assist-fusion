@@ -19,37 +19,37 @@
   - mise（用于 run/test/lint/bootstrap）
 - 仓库内约定：
   - `internal/common` 提供 config/logger/middleware(含统一错误)/store 基础能力
-  - `services/*` 提供各微服务实现
+  - `services/gateway` 提供统一 HTTP 入口（可内联直调或走 RPC）
+  - `rpc/<svc>` 提供各领域 Kitex RPC 服务 (ticket / kb / ai)
   - `airflow/` 托管数据编排（DAG）
 
 ## 3. 模块与接口
-- ticket-svc（已有）：工单 CRUD、SLA、中间件（recover、reqID、accessLog）
-- kb-svc（计划）：
-  - POST /kb/docs 导入文档（支持 txt/markdown）
-  - GET  /kb/search?q= 关键词检索（先内存倒排索引）；后续对接 ai-svc embeddings
-- ai-svc（计划，基于 Eino v0.5.0）：
-  - POST /embeddings 生成嵌入（默认 mock provider，可替换）
-  - POST /rag 基于 kb 做简单检索增强回答（RAG）
-  - POST /classify 工单意图分类（可选）
+- ticket 域：工单 CRUD、状态流转（assign / escalate / resolve / reopen）、事件与周期记录
+- kb 域：文档增删改、关键词检索（内存倒排 + snippet），后续可加 ES / 向量
+- ai 域：Embeddings（mock provider 已实现）、Chat TODO（返回 not_implemented）
+  - HTTP 通过 gateway 聚合；RPC 通过 kitex_gen/<svc>/*service
 
 ## 4. 数据流程（Airflow）
-- DAG: `airflow/dags/kb_ingest_dag.py`
+- DAG: `airflow/dags/kb_ingest_dag.py` (草案 / 可选)
   - 读取 `data/docs` 下的文档
   - 清洗/切片（简单分段）
-  - 通过 ai-svc 生成 embeddings（若不可用则跳过）
-  - 调用 kb-svc 写入/更新索引
+  - 通过 ai-rpc (embeddings) 生成向量（若不可用则跳过）
+  - 调用 kb-rpc 写入/更新索引
 
 ## 5. MVP 路线图
-1) 补全 kb-svc（内存索引 + 关键词搜索）
-2) ai-svc 提供 mock embeddings 接口（固定维度/可重复）
-3) Airflow DAG 打通 ingest → embedding → index pipeline
-4) 为 ticket-svc 与 kb-svc 增加 httptest
+1) 完成 kb 内存索引 + 搜索（已完成）
+2) AI embeddings mock（已完成）
+3) ticket 全生命周期事件 & 指标（已完成基础）
+4) 添加 Chat 实现与集成测试（进行中 / TODO）
+5) 可选：Airflow DAG ingest → embedding → index pipeline
 
 ## 6. 运维与开发
-- 统一通过 mise 运行：
+- 统一通过 mise / Makefile 运行：
   - 依赖整理：`mise run bootstrap`
-  - 运行 ticket：`mise run run-ticket`
-  - 后续新增：`run-kb`、`run-ai`、`run-airflow`
+  - 启动 RPC：`mise run run-ticket-rpc` / `run-kb-rpc` / `run-ai-rpc`
+  - 启动 gateway（直连模式）：`mise run run-gateway`
+  - 启动 gateway（RPC 模式）：env FEATURE_RPC=true go run ./services/gateway
+  - 生成与校验：`make regen && make verify-gen`
 - 日志：zap；请求访问日志已接入
 - 故障排查：优先清理 go 缓存、确保 CLT 安装
 

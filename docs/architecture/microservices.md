@@ -7,9 +7,9 @@
 | 服务 | 技术 | 责任 | 端口建议 |
 |------|------|------|----------|
 | gateway | Hertz | 对外 HTTP、认证、限流、错误映射、聚合 | :8080 |
-| ticket-rpc | Kitex (Thrift) | 工单生命周期、周期/事件审计 | :8201 |
-| kb-svc | Kitex (Thrift) | 文档 CRUD、搜索（ES/内存） | :8202 |
-| ai-svc | Kitex (Thrift) | Embeddings (及未来 RAG/分类) | :8203 |
+| ticket-rpc (rpc/ticket) | Kitex (Thrift) | 工单生命周期、周期/事件审计 | :8201 |
+| kb-rpc (rpc/kb) | Kitex (Thrift) | 文档 CRUD、搜索（ES/内存） | :8202 |
+| ai-rpc (rpc/ai) | Kitex (Thrift) | Embeddings (及未来 RAG/分类/Chat) | :8203 |
 
 ## 2. IDL 与错误模型
 
@@ -69,7 +69,7 @@
 - KB 搜索：写 -> ES（刷新策略与一致性延迟由客户端预期管理）。
 
 ## 9. 后续演进
-- RAG Pipeline（ai-svc 增加 RetrieveAndGenerate）
+- RAG Pipeline（ai-rpc 增加 RetrieveAndGenerate）
 - 事件总线（Kafka）替换当前内存事件流以做异步扩展
 - 多租户支持（租户隔离 + 指标按租户打标签）
 
@@ -78,11 +78,12 @@
 # 安装 kitex (若尚未安装)
 go install github.com/cloudwego/kitex/tool/cmd/kitex@latest
 
-# 生成 ticket 服务代码
+# 使用 Makefile 统一生成（推荐）
+make regen
+
+# 若需手动：
 kitex -module github.com/gogogo1024/assist-fusion -service ticket-rpc idl/ticket.thrift
-# 生成 kb 服务
 kitex -module github.com/gogogo1024/assist-fusion -service kb-rpc idl/kb.thrift
-# 生成 ai 服务
 kitex -module github.com/gogogo1024/assist-fusion -service ai-rpc idl/ai.thrift
 ```
 

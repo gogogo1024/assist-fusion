@@ -118,7 +118,7 @@ func newServiceInfo(hasStreaming bool, keepStreamingMethods bool, keepNonStreami
 func addDocHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*kb.KBServiceAddDocArgs)
 	realResult := result.(*kb.KBServiceAddDocResult)
-	success, err := handler.(kb.KBService).AddDoc(ctx, realArg.Title, realArg.Content)
+	success, err := handler.(kb.KBService).AddDoc(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -142,7 +142,7 @@ func newKBServiceAddDocResult() interface{} {
 func updateDocHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*kb.KBServiceUpdateDocArgs)
 	realResult := result.(*kb.KBServiceUpdateDocResult)
-	success, err := handler.(kb.KBService).UpdateDoc(ctx, realArg.Id, realArg.Title, realArg.Content)
+	success, err := handler.(kb.KBService).UpdateDoc(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -166,7 +166,7 @@ func newKBServiceUpdateDocResult() interface{} {
 func deleteDocHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*kb.KBServiceDeleteDocArgs)
 	realResult := result.(*kb.KBServiceDeleteDocResult)
-	err := handler.(kb.KBService).DeleteDoc(ctx, realArg.Id)
+	success, err := handler.(kb.KBService).DeleteDoc(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -175,6 +175,7 @@ func deleteDocHandler(ctx context.Context, handler interface{}, arg, result inte
 			return err
 		}
 	} else {
+		realResult.Success = success
 	}
 	return nil
 }
@@ -189,7 +190,7 @@ func newKBServiceDeleteDocResult() interface{} {
 func searchHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*kb.KBServiceSearchArgs)
 	realResult := result.(*kb.KBServiceSearchResult)
-	success, err := handler.(kb.KBService).Search(ctx, realArg.Query, realArg.Limit)
+	success, err := handler.(kb.KBService).Search(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -244,10 +245,9 @@ func newServiceClient(c client.Client) *kClient {
 	}
 }
 
-func (p *kClient) AddDoc(ctx context.Context, title string, content string) (r *common.KBDoc, err error) {
+func (p *kClient) AddDoc(ctx context.Context, req *kb.AddDocRequest) (r *common.KBDoc, err error) {
 	var _args kb.KBServiceAddDocArgs
-	_args.Title = title
-	_args.Content = content
+	_args.Req = req
 	var _result kb.KBServiceAddDocResult
 	if err = p.c.Call(ctx, "AddDoc", &_args, &_result); err != nil {
 		return
@@ -259,11 +259,9 @@ func (p *kClient) AddDoc(ctx context.Context, title string, content string) (r *
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) UpdateDoc(ctx context.Context, id string, title string, content string) (r *common.KBDoc, err error) {
+func (p *kClient) UpdateDoc(ctx context.Context, req *kb.UpdateDocRequest) (r *common.KBDoc, err error) {
 	var _args kb.KBServiceUpdateDocArgs
-	_args.Id = id
-	_args.Title = title
-	_args.Content = content
+	_args.Req = req
 	var _result kb.KBServiceUpdateDocResult
 	if err = p.c.Call(ctx, "UpdateDoc", &_args, &_result); err != nil {
 		return
@@ -275,24 +273,23 @@ func (p *kClient) UpdateDoc(ctx context.Context, id string, title string, conten
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) DeleteDoc(ctx context.Context, id string) (err error) {
+func (p *kClient) DeleteDoc(ctx context.Context, req *kb.DeleteDocRequest) (r *kb.DeleteDocResponse, err error) {
 	var _args kb.KBServiceDeleteDocArgs
-	_args.Id = id
+	_args.Req = req
 	var _result kb.KBServiceDeleteDocResult
 	if err = p.c.Call(ctx, "DeleteDoc", &_args, &_result); err != nil {
 		return
 	}
 	switch {
 	case _result.Err != nil:
-		return _result.Err
+		return r, _result.Err
 	}
-	return nil
+	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) Search(ctx context.Context, query string, limit int32) (r []*common.SearchItem, err error) {
+func (p *kClient) Search(ctx context.Context, req *kb.SearchRequest) (r *kb.SearchResponse, err error) {
 	var _args kb.KBServiceSearchArgs
-	_args.Query = query
-	_args.Limit = limit
+	_args.Req = req
 	var _result kb.KBServiceSearchResult
 	if err = p.c.Call(ctx, "Search", &_args, &_result); err != nil {
 		return
@@ -304,7 +301,7 @@ func (p *kClient) Search(ctx context.Context, query string, limit int32) (r []*c
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) Info(ctx context.Context) (r map[string]string, err error) {
+func (p *kClient) Info(ctx context.Context) (r *kb.InfoResponse, err error) {
 	var _args kb.KBServiceInfoArgs
 	var _result kb.KBServiceInfoResult
 	if err = p.c.Call(ctx, "Info", &_args, &_result); err != nil {

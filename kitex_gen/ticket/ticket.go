@@ -8,30 +8,395 @@ import (
 	"github.com/gogogo1024/assist-fusion/kitex_gen/common"
 )
 
+type TicketResponse struct {
+	Ticket *common.Ticket `thrift:"ticket,1" frugal:"1,default,common.Ticket" json:"ticket"`
+}
+
+func NewTicketResponse() *TicketResponse {
+	return &TicketResponse{}
+}
+
+func (p *TicketResponse) InitDefault() {
+}
+
+var TicketResponse_Ticket_DEFAULT *common.Ticket
+
+func (p *TicketResponse) GetTicket() (v *common.Ticket) {
+	if !p.IsSetTicket() {
+		return TicketResponse_Ticket_DEFAULT
+	}
+	return p.Ticket
+}
+func (p *TicketResponse) SetTicket(val *common.Ticket) {
+	p.Ticket = val
+}
+
+func (p *TicketResponse) IsSetTicket() bool {
+	return p.Ticket != nil
+}
+
+func (p *TicketResponse) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("TicketResponse(%+v)", *p)
+}
+
+var fieldIDToName_TicketResponse = map[int16]string{
+	1: "ticket",
+}
+
+type CreateTicketRequest struct {
+	Title string  `thrift:"title,1" frugal:"1,default,string" json:"title"`
+	Desc  string  `thrift:"desc,2" frugal:"2,default,string" json:"desc"`
+	Note  *string `thrift:"note,3,optional" frugal:"3,optional,string" json:"note,omitempty"`
+}
+
+func NewCreateTicketRequest() *CreateTicketRequest {
+	return &CreateTicketRequest{}
+}
+
+func (p *CreateTicketRequest) InitDefault() {
+}
+
+func (p *CreateTicketRequest) GetTitle() (v string) {
+	return p.Title
+}
+
+func (p *CreateTicketRequest) GetDesc() (v string) {
+	return p.Desc
+}
+
+var CreateTicketRequest_Note_DEFAULT string
+
+func (p *CreateTicketRequest) GetNote() (v string) {
+	if !p.IsSetNote() {
+		return CreateTicketRequest_Note_DEFAULT
+	}
+	return *p.Note
+}
+func (p *CreateTicketRequest) SetTitle(val string) {
+	p.Title = val
+}
+func (p *CreateTicketRequest) SetDesc(val string) {
+	p.Desc = val
+}
+func (p *CreateTicketRequest) SetNote(val *string) {
+	p.Note = val
+}
+
+func (p *CreateTicketRequest) IsSetNote() bool {
+	return p.Note != nil
+}
+
+func (p *CreateTicketRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("CreateTicketRequest(%+v)", *p)
+}
+
+var fieldIDToName_CreateTicketRequest = map[int16]string{
+	1: "title",
+	2: "desc",
+	3: "note",
+}
+
+type GetTicketRequest struct {
+	Id string `thrift:"id,1" frugal:"1,default,string" json:"id"`
+}
+
+func NewGetTicketRequest() *GetTicketRequest {
+	return &GetTicketRequest{}
+}
+
+func (p *GetTicketRequest) InitDefault() {
+}
+
+func (p *GetTicketRequest) GetId() (v string) {
+	return p.Id
+}
+func (p *GetTicketRequest) SetId(val string) {
+	p.Id = val
+}
+
+func (p *GetTicketRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("GetTicketRequest(%+v)", *p)
+}
+
+var fieldIDToName_GetTicketRequest = map[int16]string{
+	1: "id",
+}
+
+type ListTicketsRequest struct {
+	Pagination  *common.Pagination    `thrift:"pagination,1,optional" frugal:"1,optional,common.Pagination" json:"pagination,omitempty"`
+	Statuses    []common.TicketStatus `thrift:"statuses,2,optional" frugal:"2,optional,list<TicketStatus>" json:"statuses,omitempty"`
+	CreatedFrom *int64                `thrift:"created_from,3,optional" frugal:"3,optional,i64" json:"created_from,omitempty"`
+	CreatedTo   *int64                `thrift:"created_to,4,optional" frugal:"4,optional,i64" json:"created_to,omitempty"`
+}
+
+func NewListTicketsRequest() *ListTicketsRequest {
+	return &ListTicketsRequest{}
+}
+
+func (p *ListTicketsRequest) InitDefault() {
+}
+
+var ListTicketsRequest_Pagination_DEFAULT *common.Pagination
+
+func (p *ListTicketsRequest) GetPagination() (v *common.Pagination) {
+	if !p.IsSetPagination() {
+		return ListTicketsRequest_Pagination_DEFAULT
+	}
+	return p.Pagination
+}
+
+var ListTicketsRequest_Statuses_DEFAULT []common.TicketStatus
+
+func (p *ListTicketsRequest) GetStatuses() (v []common.TicketStatus) {
+	if !p.IsSetStatuses() {
+		return ListTicketsRequest_Statuses_DEFAULT
+	}
+	return p.Statuses
+}
+
+var ListTicketsRequest_CreatedFrom_DEFAULT int64
+
+func (p *ListTicketsRequest) GetCreatedFrom() (v int64) {
+	if !p.IsSetCreatedFrom() {
+		return ListTicketsRequest_CreatedFrom_DEFAULT
+	}
+	return *p.CreatedFrom
+}
+
+var ListTicketsRequest_CreatedTo_DEFAULT int64
+
+func (p *ListTicketsRequest) GetCreatedTo() (v int64) {
+	if !p.IsSetCreatedTo() {
+		return ListTicketsRequest_CreatedTo_DEFAULT
+	}
+	return *p.CreatedTo
+}
+func (p *ListTicketsRequest) SetPagination(val *common.Pagination) {
+	p.Pagination = val
+}
+func (p *ListTicketsRequest) SetStatuses(val []common.TicketStatus) {
+	p.Statuses = val
+}
+func (p *ListTicketsRequest) SetCreatedFrom(val *int64) {
+	p.CreatedFrom = val
+}
+func (p *ListTicketsRequest) SetCreatedTo(val *int64) {
+	p.CreatedTo = val
+}
+
+func (p *ListTicketsRequest) IsSetPagination() bool {
+	return p.Pagination != nil
+}
+
+func (p *ListTicketsRequest) IsSetStatuses() bool {
+	return p.Statuses != nil
+}
+
+func (p *ListTicketsRequest) IsSetCreatedFrom() bool {
+	return p.CreatedFrom != nil
+}
+
+func (p *ListTicketsRequest) IsSetCreatedTo() bool {
+	return p.CreatedTo != nil
+}
+
+func (p *ListTicketsRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("ListTicketsRequest(%+v)", *p)
+}
+
+var fieldIDToName_ListTicketsRequest = map[int16]string{
+	1: "pagination",
+	2: "statuses",
+	3: "created_from",
+	4: "created_to",
+}
+
+type ListTicketsResponse struct {
+	Tickets  []*common.Ticket `thrift:"tickets,1" frugal:"1,default,list<common.Ticket>" json:"tickets"`
+	PageInfo *common.PageInfo `thrift:"page_info,2,optional" frugal:"2,optional,common.PageInfo" json:"page_info,omitempty"`
+}
+
+func NewListTicketsResponse() *ListTicketsResponse {
+	return &ListTicketsResponse{}
+}
+
+func (p *ListTicketsResponse) InitDefault() {
+}
+
+func (p *ListTicketsResponse) GetTickets() (v []*common.Ticket) {
+	return p.Tickets
+}
+
+var ListTicketsResponse_PageInfo_DEFAULT *common.PageInfo
+
+func (p *ListTicketsResponse) GetPageInfo() (v *common.PageInfo) {
+	if !p.IsSetPageInfo() {
+		return ListTicketsResponse_PageInfo_DEFAULT
+	}
+	return p.PageInfo
+}
+func (p *ListTicketsResponse) SetTickets(val []*common.Ticket) {
+	p.Tickets = val
+}
+func (p *ListTicketsResponse) SetPageInfo(val *common.PageInfo) {
+	p.PageInfo = val
+}
+
+func (p *ListTicketsResponse) IsSetPageInfo() bool {
+	return p.PageInfo != nil
+}
+
+func (p *ListTicketsResponse) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("ListTicketsResponse(%+v)", *p)
+}
+
+var fieldIDToName_ListTicketsResponse = map[int16]string{
+	1: "tickets",
+	2: "page_info",
+}
+
+type TicketActionRequest struct {
+	Id   string  `thrift:"id,1" frugal:"1,default,string" json:"id"`
+	Note *string `thrift:"note,2,optional" frugal:"2,optional,string" json:"note,omitempty"`
+}
+
+func NewTicketActionRequest() *TicketActionRequest {
+	return &TicketActionRequest{}
+}
+
+func (p *TicketActionRequest) InitDefault() {
+}
+
+func (p *TicketActionRequest) GetId() (v string) {
+	return p.Id
+}
+
+var TicketActionRequest_Note_DEFAULT string
+
+func (p *TicketActionRequest) GetNote() (v string) {
+	if !p.IsSetNote() {
+		return TicketActionRequest_Note_DEFAULT
+	}
+	return *p.Note
+}
+func (p *TicketActionRequest) SetId(val string) {
+	p.Id = val
+}
+func (p *TicketActionRequest) SetNote(val *string) {
+	p.Note = val
+}
+
+func (p *TicketActionRequest) IsSetNote() bool {
+	return p.Note != nil
+}
+
+func (p *TicketActionRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("TicketActionRequest(%+v)", *p)
+}
+
+var fieldIDToName_TicketActionRequest = map[int16]string{
+	1: "id",
+	2: "note",
+}
+
+type GetCyclesRequest struct {
+	Id string `thrift:"id,1" frugal:"1,default,string" json:"id"`
+}
+
+func NewGetCyclesRequest() *GetCyclesRequest {
+	return &GetCyclesRequest{}
+}
+
+func (p *GetCyclesRequest) InitDefault() {
+}
+
+func (p *GetCyclesRequest) GetId() (v string) {
+	return p.Id
+}
+func (p *GetCyclesRequest) SetId(val string) {
+	p.Id = val
+}
+
+func (p *GetCyclesRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("GetCyclesRequest(%+v)", *p)
+}
+
+var fieldIDToName_GetCyclesRequest = map[int16]string{
+	1: "id",
+}
+
+type GetEventsRequest struct {
+	Id string `thrift:"id,1" frugal:"1,default,string" json:"id"`
+}
+
+func NewGetEventsRequest() *GetEventsRequest {
+	return &GetEventsRequest{}
+}
+
+func (p *GetEventsRequest) InitDefault() {
+}
+
+func (p *GetEventsRequest) GetId() (v string) {
+	return p.Id
+}
+func (p *GetEventsRequest) SetId(val string) {
+	p.Id = val
+}
+
+func (p *GetEventsRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("GetEventsRequest(%+v)", *p)
+}
+
+var fieldIDToName_GetEventsRequest = map[int16]string{
+	1: "id",
+}
+
 type TicketService interface {
-	CreateTicket(ctx context.Context, title string, desc string, note string) (r *common.Ticket, err error)
+	CreateTicket(ctx context.Context, req *CreateTicketRequest) (r *TicketResponse, err error)
 
-	GetTicket(ctx context.Context, id string) (r *common.Ticket, err error)
+	GetTicket(ctx context.Context, req *GetTicketRequest) (r *TicketResponse, err error)
 
-	ListTickets(ctx context.Context) (r []*common.Ticket, err error)
+	ListTickets(ctx context.Context, req *ListTicketsRequest) (r *ListTicketsResponse, err error)
 
-	Assign(ctx context.Context, id string, note string) (r *common.Ticket, err error)
+	Assign(ctx context.Context, req *TicketActionRequest) (r *TicketResponse, err error)
 
-	Resolve(ctx context.Context, id string, note string) (r *common.Ticket, err error)
+	Resolve(ctx context.Context, req *TicketActionRequest) (r *TicketResponse, err error)
 
-	Escalate(ctx context.Context, id string, note string) (r *common.Ticket, err error)
+	Escalate(ctx context.Context, req *TicketActionRequest) (r *TicketResponse, err error)
 
-	Reopen(ctx context.Context, id string, note string) (r *common.Ticket, err error)
+	Reopen(ctx context.Context, req *TicketActionRequest) (r *TicketResponse, err error)
 
-	GetCycles(ctx context.Context, id string) (r []*common.TicketCycle, err error)
+	GetCycles(ctx context.Context, req *GetCyclesRequest) (r []*common.TicketCycle, err error)
 
-	GetEvents(ctx context.Context, id string) (r []*common.TicketEvent, err error)
+	GetEvents(ctx context.Context, req *GetEventsRequest) (r []*common.TicketEvent, err error)
 }
 
 type TicketServiceCreateTicketArgs struct {
-	Title string `thrift:"title,1" frugal:"1,default,string" json:"title"`
-	Desc  string `thrift:"desc,2" frugal:"2,default,string" json:"desc"`
-	Note  string `thrift:"note,3" frugal:"3,default,string" json:"note"`
+	Req *CreateTicketRequest `thrift:"req,1" frugal:"1,default,CreateTicketRequest" json:"req"`
 }
 
 func NewTicketServiceCreateTicketArgs() *TicketServiceCreateTicketArgs {
@@ -41,25 +406,20 @@ func NewTicketServiceCreateTicketArgs() *TicketServiceCreateTicketArgs {
 func (p *TicketServiceCreateTicketArgs) InitDefault() {
 }
 
-func (p *TicketServiceCreateTicketArgs) GetTitle() (v string) {
-	return p.Title
+var TicketServiceCreateTicketArgs_Req_DEFAULT *CreateTicketRequest
+
+func (p *TicketServiceCreateTicketArgs) GetReq() (v *CreateTicketRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceCreateTicketArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *TicketServiceCreateTicketArgs) SetReq(val *CreateTicketRequest) {
+	p.Req = val
 }
 
-func (p *TicketServiceCreateTicketArgs) GetDesc() (v string) {
-	return p.Desc
-}
-
-func (p *TicketServiceCreateTicketArgs) GetNote() (v string) {
-	return p.Note
-}
-func (p *TicketServiceCreateTicketArgs) SetTitle(val string) {
-	p.Title = val
-}
-func (p *TicketServiceCreateTicketArgs) SetDesc(val string) {
-	p.Desc = val
-}
-func (p *TicketServiceCreateTicketArgs) SetNote(val string) {
-	p.Note = val
+func (p *TicketServiceCreateTicketArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *TicketServiceCreateTicketArgs) String() string {
@@ -70,13 +430,11 @@ func (p *TicketServiceCreateTicketArgs) String() string {
 }
 
 var fieldIDToName_TicketServiceCreateTicketArgs = map[int16]string{
-	1: "title",
-	2: "desc",
-	3: "note",
+	1: "req",
 }
 
 type TicketServiceCreateTicketResult struct {
-	Success *common.Ticket       `thrift:"success,0,optional" frugal:"0,optional,common.Ticket" json:"success,omitempty"`
+	Success *TicketResponse      `thrift:"success,0,optional" frugal:"0,optional,TicketResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -87,9 +445,9 @@ func NewTicketServiceCreateTicketResult() *TicketServiceCreateTicketResult {
 func (p *TicketServiceCreateTicketResult) InitDefault() {
 }
 
-var TicketServiceCreateTicketResult_Success_DEFAULT *common.Ticket
+var TicketServiceCreateTicketResult_Success_DEFAULT *TicketResponse
 
-func (p *TicketServiceCreateTicketResult) GetSuccess() (v *common.Ticket) {
+func (p *TicketServiceCreateTicketResult) GetSuccess() (v *TicketResponse) {
 	if !p.IsSetSuccess() {
 		return TicketServiceCreateTicketResult_Success_DEFAULT
 	}
@@ -105,7 +463,7 @@ func (p *TicketServiceCreateTicketResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *TicketServiceCreateTicketResult) SetSuccess(x interface{}) {
-	p.Success = x.(*common.Ticket)
+	p.Success = x.(*TicketResponse)
 }
 func (p *TicketServiceCreateTicketResult) SetErr(val *common.ServiceError) {
 	p.Err = val
@@ -132,7 +490,7 @@ var fieldIDToName_TicketServiceCreateTicketResult = map[int16]string{
 }
 
 type TicketServiceGetTicketArgs struct {
-	Id string `thrift:"id,1" frugal:"1,default,string" json:"id"`
+	Req *GetTicketRequest `thrift:"req,1" frugal:"1,default,GetTicketRequest" json:"req"`
 }
 
 func NewTicketServiceGetTicketArgs() *TicketServiceGetTicketArgs {
@@ -142,11 +500,20 @@ func NewTicketServiceGetTicketArgs() *TicketServiceGetTicketArgs {
 func (p *TicketServiceGetTicketArgs) InitDefault() {
 }
 
-func (p *TicketServiceGetTicketArgs) GetId() (v string) {
-	return p.Id
+var TicketServiceGetTicketArgs_Req_DEFAULT *GetTicketRequest
+
+func (p *TicketServiceGetTicketArgs) GetReq() (v *GetTicketRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceGetTicketArgs_Req_DEFAULT
+	}
+	return p.Req
 }
-func (p *TicketServiceGetTicketArgs) SetId(val string) {
-	p.Id = val
+func (p *TicketServiceGetTicketArgs) SetReq(val *GetTicketRequest) {
+	p.Req = val
+}
+
+func (p *TicketServiceGetTicketArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *TicketServiceGetTicketArgs) String() string {
@@ -157,11 +524,11 @@ func (p *TicketServiceGetTicketArgs) String() string {
 }
 
 var fieldIDToName_TicketServiceGetTicketArgs = map[int16]string{
-	1: "id",
+	1: "req",
 }
 
 type TicketServiceGetTicketResult struct {
-	Success *common.Ticket       `thrift:"success,0,optional" frugal:"0,optional,common.Ticket" json:"success,omitempty"`
+	Success *TicketResponse      `thrift:"success,0,optional" frugal:"0,optional,TicketResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -172,9 +539,9 @@ func NewTicketServiceGetTicketResult() *TicketServiceGetTicketResult {
 func (p *TicketServiceGetTicketResult) InitDefault() {
 }
 
-var TicketServiceGetTicketResult_Success_DEFAULT *common.Ticket
+var TicketServiceGetTicketResult_Success_DEFAULT *TicketResponse
 
-func (p *TicketServiceGetTicketResult) GetSuccess() (v *common.Ticket) {
+func (p *TicketServiceGetTicketResult) GetSuccess() (v *TicketResponse) {
 	if !p.IsSetSuccess() {
 		return TicketServiceGetTicketResult_Success_DEFAULT
 	}
@@ -190,7 +557,7 @@ func (p *TicketServiceGetTicketResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *TicketServiceGetTicketResult) SetSuccess(x interface{}) {
-	p.Success = x.(*common.Ticket)
+	p.Success = x.(*TicketResponse)
 }
 func (p *TicketServiceGetTicketResult) SetErr(val *common.ServiceError) {
 	p.Err = val
@@ -217,6 +584,7 @@ var fieldIDToName_TicketServiceGetTicketResult = map[int16]string{
 }
 
 type TicketServiceListTicketsArgs struct {
+	Req *ListTicketsRequest `thrift:"req,1" frugal:"1,default,ListTicketsRequest" json:"req"`
 }
 
 func NewTicketServiceListTicketsArgs() *TicketServiceListTicketsArgs {
@@ -226,6 +594,22 @@ func NewTicketServiceListTicketsArgs() *TicketServiceListTicketsArgs {
 func (p *TicketServiceListTicketsArgs) InitDefault() {
 }
 
+var TicketServiceListTicketsArgs_Req_DEFAULT *ListTicketsRequest
+
+func (p *TicketServiceListTicketsArgs) GetReq() (v *ListTicketsRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceListTicketsArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *TicketServiceListTicketsArgs) SetReq(val *ListTicketsRequest) {
+	p.Req = val
+}
+
+func (p *TicketServiceListTicketsArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
 func (p *TicketServiceListTicketsArgs) String() string {
 	if p == nil {
 		return "<nil>"
@@ -233,10 +617,12 @@ func (p *TicketServiceListTicketsArgs) String() string {
 	return fmt.Sprintf("TicketServiceListTicketsArgs(%+v)", *p)
 }
 
-var fieldIDToName_TicketServiceListTicketsArgs = map[int16]string{}
+var fieldIDToName_TicketServiceListTicketsArgs = map[int16]string{
+	1: "req",
+}
 
 type TicketServiceListTicketsResult struct {
-	Success []*common.Ticket     `thrift:"success,0,optional" frugal:"0,optional,list<common.Ticket>" json:"success,omitempty"`
+	Success *ListTicketsResponse `thrift:"success,0,optional" frugal:"0,optional,ListTicketsResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -247,9 +633,9 @@ func NewTicketServiceListTicketsResult() *TicketServiceListTicketsResult {
 func (p *TicketServiceListTicketsResult) InitDefault() {
 }
 
-var TicketServiceListTicketsResult_Success_DEFAULT []*common.Ticket
+var TicketServiceListTicketsResult_Success_DEFAULT *ListTicketsResponse
 
-func (p *TicketServiceListTicketsResult) GetSuccess() (v []*common.Ticket) {
+func (p *TicketServiceListTicketsResult) GetSuccess() (v *ListTicketsResponse) {
 	if !p.IsSetSuccess() {
 		return TicketServiceListTicketsResult_Success_DEFAULT
 	}
@@ -265,7 +651,7 @@ func (p *TicketServiceListTicketsResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *TicketServiceListTicketsResult) SetSuccess(x interface{}) {
-	p.Success = x.([]*common.Ticket)
+	p.Success = x.(*ListTicketsResponse)
 }
 func (p *TicketServiceListTicketsResult) SetErr(val *common.ServiceError) {
 	p.Err = val
@@ -292,8 +678,7 @@ var fieldIDToName_TicketServiceListTicketsResult = map[int16]string{
 }
 
 type TicketServiceAssignArgs struct {
-	Id   string `thrift:"id,1" frugal:"1,default,string" json:"id"`
-	Note string `thrift:"note,2" frugal:"2,default,string" json:"note"`
+	Req *TicketActionRequest `thrift:"req,1" frugal:"1,default,TicketActionRequest" json:"req"`
 }
 
 func NewTicketServiceAssignArgs() *TicketServiceAssignArgs {
@@ -303,18 +688,20 @@ func NewTicketServiceAssignArgs() *TicketServiceAssignArgs {
 func (p *TicketServiceAssignArgs) InitDefault() {
 }
 
-func (p *TicketServiceAssignArgs) GetId() (v string) {
-	return p.Id
+var TicketServiceAssignArgs_Req_DEFAULT *TicketActionRequest
+
+func (p *TicketServiceAssignArgs) GetReq() (v *TicketActionRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceAssignArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *TicketServiceAssignArgs) SetReq(val *TicketActionRequest) {
+	p.Req = val
 }
 
-func (p *TicketServiceAssignArgs) GetNote() (v string) {
-	return p.Note
-}
-func (p *TicketServiceAssignArgs) SetId(val string) {
-	p.Id = val
-}
-func (p *TicketServiceAssignArgs) SetNote(val string) {
-	p.Note = val
+func (p *TicketServiceAssignArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *TicketServiceAssignArgs) String() string {
@@ -325,12 +712,11 @@ func (p *TicketServiceAssignArgs) String() string {
 }
 
 var fieldIDToName_TicketServiceAssignArgs = map[int16]string{
-	1: "id",
-	2: "note",
+	1: "req",
 }
 
 type TicketServiceAssignResult struct {
-	Success *common.Ticket       `thrift:"success,0,optional" frugal:"0,optional,common.Ticket" json:"success,omitempty"`
+	Success *TicketResponse      `thrift:"success,0,optional" frugal:"0,optional,TicketResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -341,9 +727,9 @@ func NewTicketServiceAssignResult() *TicketServiceAssignResult {
 func (p *TicketServiceAssignResult) InitDefault() {
 }
 
-var TicketServiceAssignResult_Success_DEFAULT *common.Ticket
+var TicketServiceAssignResult_Success_DEFAULT *TicketResponse
 
-func (p *TicketServiceAssignResult) GetSuccess() (v *common.Ticket) {
+func (p *TicketServiceAssignResult) GetSuccess() (v *TicketResponse) {
 	if !p.IsSetSuccess() {
 		return TicketServiceAssignResult_Success_DEFAULT
 	}
@@ -359,7 +745,7 @@ func (p *TicketServiceAssignResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *TicketServiceAssignResult) SetSuccess(x interface{}) {
-	p.Success = x.(*common.Ticket)
+	p.Success = x.(*TicketResponse)
 }
 func (p *TicketServiceAssignResult) SetErr(val *common.ServiceError) {
 	p.Err = val
@@ -386,8 +772,7 @@ var fieldIDToName_TicketServiceAssignResult = map[int16]string{
 }
 
 type TicketServiceResolveArgs struct {
-	Id   string `thrift:"id,1" frugal:"1,default,string" json:"id"`
-	Note string `thrift:"note,2" frugal:"2,default,string" json:"note"`
+	Req *TicketActionRequest `thrift:"req,1" frugal:"1,default,TicketActionRequest" json:"req"`
 }
 
 func NewTicketServiceResolveArgs() *TicketServiceResolveArgs {
@@ -397,18 +782,20 @@ func NewTicketServiceResolveArgs() *TicketServiceResolveArgs {
 func (p *TicketServiceResolveArgs) InitDefault() {
 }
 
-func (p *TicketServiceResolveArgs) GetId() (v string) {
-	return p.Id
+var TicketServiceResolveArgs_Req_DEFAULT *TicketActionRequest
+
+func (p *TicketServiceResolveArgs) GetReq() (v *TicketActionRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceResolveArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *TicketServiceResolveArgs) SetReq(val *TicketActionRequest) {
+	p.Req = val
 }
 
-func (p *TicketServiceResolveArgs) GetNote() (v string) {
-	return p.Note
-}
-func (p *TicketServiceResolveArgs) SetId(val string) {
-	p.Id = val
-}
-func (p *TicketServiceResolveArgs) SetNote(val string) {
-	p.Note = val
+func (p *TicketServiceResolveArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *TicketServiceResolveArgs) String() string {
@@ -419,12 +806,11 @@ func (p *TicketServiceResolveArgs) String() string {
 }
 
 var fieldIDToName_TicketServiceResolveArgs = map[int16]string{
-	1: "id",
-	2: "note",
+	1: "req",
 }
 
 type TicketServiceResolveResult struct {
-	Success *common.Ticket       `thrift:"success,0,optional" frugal:"0,optional,common.Ticket" json:"success,omitempty"`
+	Success *TicketResponse      `thrift:"success,0,optional" frugal:"0,optional,TicketResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -435,9 +821,9 @@ func NewTicketServiceResolveResult() *TicketServiceResolveResult {
 func (p *TicketServiceResolveResult) InitDefault() {
 }
 
-var TicketServiceResolveResult_Success_DEFAULT *common.Ticket
+var TicketServiceResolveResult_Success_DEFAULT *TicketResponse
 
-func (p *TicketServiceResolveResult) GetSuccess() (v *common.Ticket) {
+func (p *TicketServiceResolveResult) GetSuccess() (v *TicketResponse) {
 	if !p.IsSetSuccess() {
 		return TicketServiceResolveResult_Success_DEFAULT
 	}
@@ -453,7 +839,7 @@ func (p *TicketServiceResolveResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *TicketServiceResolveResult) SetSuccess(x interface{}) {
-	p.Success = x.(*common.Ticket)
+	p.Success = x.(*TicketResponse)
 }
 func (p *TicketServiceResolveResult) SetErr(val *common.ServiceError) {
 	p.Err = val
@@ -480,8 +866,7 @@ var fieldIDToName_TicketServiceResolveResult = map[int16]string{
 }
 
 type TicketServiceEscalateArgs struct {
-	Id   string `thrift:"id,1" frugal:"1,default,string" json:"id"`
-	Note string `thrift:"note,2" frugal:"2,default,string" json:"note"`
+	Req *TicketActionRequest `thrift:"req,1" frugal:"1,default,TicketActionRequest" json:"req"`
 }
 
 func NewTicketServiceEscalateArgs() *TicketServiceEscalateArgs {
@@ -491,18 +876,20 @@ func NewTicketServiceEscalateArgs() *TicketServiceEscalateArgs {
 func (p *TicketServiceEscalateArgs) InitDefault() {
 }
 
-func (p *TicketServiceEscalateArgs) GetId() (v string) {
-	return p.Id
+var TicketServiceEscalateArgs_Req_DEFAULT *TicketActionRequest
+
+func (p *TicketServiceEscalateArgs) GetReq() (v *TicketActionRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceEscalateArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *TicketServiceEscalateArgs) SetReq(val *TicketActionRequest) {
+	p.Req = val
 }
 
-func (p *TicketServiceEscalateArgs) GetNote() (v string) {
-	return p.Note
-}
-func (p *TicketServiceEscalateArgs) SetId(val string) {
-	p.Id = val
-}
-func (p *TicketServiceEscalateArgs) SetNote(val string) {
-	p.Note = val
+func (p *TicketServiceEscalateArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *TicketServiceEscalateArgs) String() string {
@@ -513,12 +900,11 @@ func (p *TicketServiceEscalateArgs) String() string {
 }
 
 var fieldIDToName_TicketServiceEscalateArgs = map[int16]string{
-	1: "id",
-	2: "note",
+	1: "req",
 }
 
 type TicketServiceEscalateResult struct {
-	Success *common.Ticket       `thrift:"success,0,optional" frugal:"0,optional,common.Ticket" json:"success,omitempty"`
+	Success *TicketResponse      `thrift:"success,0,optional" frugal:"0,optional,TicketResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -529,9 +915,9 @@ func NewTicketServiceEscalateResult() *TicketServiceEscalateResult {
 func (p *TicketServiceEscalateResult) InitDefault() {
 }
 
-var TicketServiceEscalateResult_Success_DEFAULT *common.Ticket
+var TicketServiceEscalateResult_Success_DEFAULT *TicketResponse
 
-func (p *TicketServiceEscalateResult) GetSuccess() (v *common.Ticket) {
+func (p *TicketServiceEscalateResult) GetSuccess() (v *TicketResponse) {
 	if !p.IsSetSuccess() {
 		return TicketServiceEscalateResult_Success_DEFAULT
 	}
@@ -547,7 +933,7 @@ func (p *TicketServiceEscalateResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *TicketServiceEscalateResult) SetSuccess(x interface{}) {
-	p.Success = x.(*common.Ticket)
+	p.Success = x.(*TicketResponse)
 }
 func (p *TicketServiceEscalateResult) SetErr(val *common.ServiceError) {
 	p.Err = val
@@ -574,8 +960,7 @@ var fieldIDToName_TicketServiceEscalateResult = map[int16]string{
 }
 
 type TicketServiceReopenArgs struct {
-	Id   string `thrift:"id,1" frugal:"1,default,string" json:"id"`
-	Note string `thrift:"note,2" frugal:"2,default,string" json:"note"`
+	Req *TicketActionRequest `thrift:"req,1" frugal:"1,default,TicketActionRequest" json:"req"`
 }
 
 func NewTicketServiceReopenArgs() *TicketServiceReopenArgs {
@@ -585,18 +970,20 @@ func NewTicketServiceReopenArgs() *TicketServiceReopenArgs {
 func (p *TicketServiceReopenArgs) InitDefault() {
 }
 
-func (p *TicketServiceReopenArgs) GetId() (v string) {
-	return p.Id
+var TicketServiceReopenArgs_Req_DEFAULT *TicketActionRequest
+
+func (p *TicketServiceReopenArgs) GetReq() (v *TicketActionRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceReopenArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *TicketServiceReopenArgs) SetReq(val *TicketActionRequest) {
+	p.Req = val
 }
 
-func (p *TicketServiceReopenArgs) GetNote() (v string) {
-	return p.Note
-}
-func (p *TicketServiceReopenArgs) SetId(val string) {
-	p.Id = val
-}
-func (p *TicketServiceReopenArgs) SetNote(val string) {
-	p.Note = val
+func (p *TicketServiceReopenArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *TicketServiceReopenArgs) String() string {
@@ -607,12 +994,11 @@ func (p *TicketServiceReopenArgs) String() string {
 }
 
 var fieldIDToName_TicketServiceReopenArgs = map[int16]string{
-	1: "id",
-	2: "note",
+	1: "req",
 }
 
 type TicketServiceReopenResult struct {
-	Success *common.Ticket       `thrift:"success,0,optional" frugal:"0,optional,common.Ticket" json:"success,omitempty"`
+	Success *TicketResponse      `thrift:"success,0,optional" frugal:"0,optional,TicketResponse" json:"success,omitempty"`
 	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
 }
 
@@ -623,9 +1009,9 @@ func NewTicketServiceReopenResult() *TicketServiceReopenResult {
 func (p *TicketServiceReopenResult) InitDefault() {
 }
 
-var TicketServiceReopenResult_Success_DEFAULT *common.Ticket
+var TicketServiceReopenResult_Success_DEFAULT *TicketResponse
 
-func (p *TicketServiceReopenResult) GetSuccess() (v *common.Ticket) {
+func (p *TicketServiceReopenResult) GetSuccess() (v *TicketResponse) {
 	if !p.IsSetSuccess() {
 		return TicketServiceReopenResult_Success_DEFAULT
 	}
@@ -641,7 +1027,7 @@ func (p *TicketServiceReopenResult) GetErr() (v *common.ServiceError) {
 	return p.Err
 }
 func (p *TicketServiceReopenResult) SetSuccess(x interface{}) {
-	p.Success = x.(*common.Ticket)
+	p.Success = x.(*TicketResponse)
 }
 func (p *TicketServiceReopenResult) SetErr(val *common.ServiceError) {
 	p.Err = val
@@ -668,7 +1054,7 @@ var fieldIDToName_TicketServiceReopenResult = map[int16]string{
 }
 
 type TicketServiceGetCyclesArgs struct {
-	Id string `thrift:"id,1" frugal:"1,default,string" json:"id"`
+	Req *GetCyclesRequest `thrift:"req,1" frugal:"1,default,GetCyclesRequest" json:"req"`
 }
 
 func NewTicketServiceGetCyclesArgs() *TicketServiceGetCyclesArgs {
@@ -678,11 +1064,20 @@ func NewTicketServiceGetCyclesArgs() *TicketServiceGetCyclesArgs {
 func (p *TicketServiceGetCyclesArgs) InitDefault() {
 }
 
-func (p *TicketServiceGetCyclesArgs) GetId() (v string) {
-	return p.Id
+var TicketServiceGetCyclesArgs_Req_DEFAULT *GetCyclesRequest
+
+func (p *TicketServiceGetCyclesArgs) GetReq() (v *GetCyclesRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceGetCyclesArgs_Req_DEFAULT
+	}
+	return p.Req
 }
-func (p *TicketServiceGetCyclesArgs) SetId(val string) {
-	p.Id = val
+func (p *TicketServiceGetCyclesArgs) SetReq(val *GetCyclesRequest) {
+	p.Req = val
+}
+
+func (p *TicketServiceGetCyclesArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *TicketServiceGetCyclesArgs) String() string {
@@ -693,7 +1088,7 @@ func (p *TicketServiceGetCyclesArgs) String() string {
 }
 
 var fieldIDToName_TicketServiceGetCyclesArgs = map[int16]string{
-	1: "id",
+	1: "req",
 }
 
 type TicketServiceGetCyclesResult struct {
@@ -753,7 +1148,7 @@ var fieldIDToName_TicketServiceGetCyclesResult = map[int16]string{
 }
 
 type TicketServiceGetEventsArgs struct {
-	Id string `thrift:"id,1" frugal:"1,default,string" json:"id"`
+	Req *GetEventsRequest `thrift:"req,1" frugal:"1,default,GetEventsRequest" json:"req"`
 }
 
 func NewTicketServiceGetEventsArgs() *TicketServiceGetEventsArgs {
@@ -763,11 +1158,20 @@ func NewTicketServiceGetEventsArgs() *TicketServiceGetEventsArgs {
 func (p *TicketServiceGetEventsArgs) InitDefault() {
 }
 
-func (p *TicketServiceGetEventsArgs) GetId() (v string) {
-	return p.Id
+var TicketServiceGetEventsArgs_Req_DEFAULT *GetEventsRequest
+
+func (p *TicketServiceGetEventsArgs) GetReq() (v *GetEventsRequest) {
+	if !p.IsSetReq() {
+		return TicketServiceGetEventsArgs_Req_DEFAULT
+	}
+	return p.Req
 }
-func (p *TicketServiceGetEventsArgs) SetId(val string) {
-	p.Id = val
+func (p *TicketServiceGetEventsArgs) SetReq(val *GetEventsRequest) {
+	p.Req = val
+}
+
+func (p *TicketServiceGetEventsArgs) IsSetReq() bool {
+	return p.Req != nil
 }
 
 func (p *TicketServiceGetEventsArgs) String() string {
@@ -778,7 +1182,7 @@ func (p *TicketServiceGetEventsArgs) String() string {
 }
 
 var fieldIDToName_TicketServiceGetEventsArgs = map[int16]string{
-	1: "id",
+	1: "req",
 }
 
 type TicketServiceGetEventsResult struct {

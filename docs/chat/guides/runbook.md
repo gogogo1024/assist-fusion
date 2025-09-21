@@ -9,21 +9,27 @@
 
 ## 常用命令
 ```sh
-# 整理依赖
-docs/chat$ mise run bootstrap
+# 依赖整理
+go mod tidy
 
-# 运行工单服务（:8081）
-docs/chat$ mise run run-ticket
+# 启动各 RPC 服务（开发）
+make run-ticket  # :8201 (TICKET_RPC_ADDR 可覆盖)
+make run-kb      # :8202
+make run-ai      # :8203
 
-#（创建服务后解注释）运行 kb-svc（:8082）与 ai-svc（:8083）
-# docs/chat$ mise run run-kb
-# docs/chat$ mise run run-ai
+# 启动 gateway（本地直连模式）
+HTTP_ADDR=:8081 go run ./services/gateway
 
-# 运行测试
-docs/chat$ mise run test
+# 切换 gateway 为 RPC 模式（需要上述 RPC 已起）
+FEATURE_RPC=true HTTP_ADDR=:8081 go run ./services/gateway
 
-# 静态检查（如已安装）
-docs/chat$ mise run lint
+# 再生成并校验 Kitex 代码
+make regen
+make verify-gen
+
+# 测试 / Lint
+go test ./...
+golangci-lint run
 ```
 
 ## 健康检查

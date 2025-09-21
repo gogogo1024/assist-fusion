@@ -1,12 +1,14 @@
 namespace go common
 
 /**
- * Shared error + common structs
+ * Shared basic domain & transport models.
+ * Error code candidates: bad_request | not_found | conflict | internal | kb_unavailable
  */
 
 exception ServiceError {
-  1: string code
-  2: string message
+  1: string code               // machine readable error code
+  2: string message            // human readable short description
+  3: optional map<string,string> meta // optional extra context (trace_id, field, etc.)
 }
 
 enum TicketStatus {
@@ -49,6 +51,7 @@ struct KBDoc {
   1: string id,
   2: string title,
   3: string content,
+  4: optional map<string,string> tags,
 }
 
 struct SearchItem {
@@ -59,11 +62,29 @@ struct SearchItem {
 }
 
 struct EmbeddingRequest {
-  1: list<string> texts,
-  2: i32 dim,
+  1: list<string> texts, // server may enforce max batch size (e.g. 32)
+  2: i32 dim,            // <=0 let server use default
 }
 
 struct EmbeddingResponse {
   1: list<list<double>> vectors,
   2: i32 dim,
+  3: optional EmbeddingUsage usage,
+}
+
+struct EmbeddingUsage {
+  1: i32 prompt_tokens,
+  2: i32 total_tokens,
+}
+
+struct Pagination {
+  1: i32 page,       // 1-based
+  2: i32 page_size,
+}
+
+struct PageInfo {
+  1: i32 page,
+  2: i32 page_size,
+  3: i32 total_items,
+  4: i32 total_pages,
 }

@@ -65,3 +65,40 @@ web/node_modules
 web/dist
 web/docs
 web/README.theme.md
+
+# Ignore all markdown files (user request)
+*.md
+
+# Additional binary / build artifacts
+*.a
+*.o
+*.obj
+*.pyc
+*.pyo
+*.pyd
+*.wasm
+*.tgz
+*.tar
+*.zip
+*.7z
+*.gz
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+*.lock
+
+# Common output dirs
+build/
+dist/
+out/
+release/
+target/
+coverage/
+
+# Core dumps & crash logs
+core
+core.*
+*.crash
+*.stackdump

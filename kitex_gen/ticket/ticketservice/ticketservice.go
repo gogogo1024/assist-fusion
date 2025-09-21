@@ -146,7 +146,7 @@ func newServiceInfo(hasStreaming bool, keepStreamingMethods bool, keepNonStreami
 func createTicketHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*ticket.TicketServiceCreateTicketArgs)
 	realResult := result.(*ticket.TicketServiceCreateTicketResult)
-	success, err := handler.(ticket.TicketService).CreateTicket(ctx, realArg.Title, realArg.Desc, realArg.Note)
+	success, err := handler.(ticket.TicketService).CreateTicket(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -170,7 +170,7 @@ func newTicketServiceCreateTicketResult() interface{} {
 func getTicketHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*ticket.TicketServiceGetTicketArgs)
 	realResult := result.(*ticket.TicketServiceGetTicketResult)
-	success, err := handler.(ticket.TicketService).GetTicket(ctx, realArg.Id)
+	success, err := handler.(ticket.TicketService).GetTicket(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -192,9 +192,9 @@ func newTicketServiceGetTicketResult() interface{} {
 }
 
 func listTicketsHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
-	_ = arg.(*ticket.TicketServiceListTicketsArgs)
+	realArg := arg.(*ticket.TicketServiceListTicketsArgs)
 	realResult := result.(*ticket.TicketServiceListTicketsResult)
-	success, err := handler.(ticket.TicketService).ListTickets(ctx)
+	success, err := handler.(ticket.TicketService).ListTickets(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -218,7 +218,7 @@ func newTicketServiceListTicketsResult() interface{} {
 func assignHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*ticket.TicketServiceAssignArgs)
 	realResult := result.(*ticket.TicketServiceAssignResult)
-	success, err := handler.(ticket.TicketService).Assign(ctx, realArg.Id, realArg.Note)
+	success, err := handler.(ticket.TicketService).Assign(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -242,7 +242,7 @@ func newTicketServiceAssignResult() interface{} {
 func resolveHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*ticket.TicketServiceResolveArgs)
 	realResult := result.(*ticket.TicketServiceResolveResult)
-	success, err := handler.(ticket.TicketService).Resolve(ctx, realArg.Id, realArg.Note)
+	success, err := handler.(ticket.TicketService).Resolve(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -266,7 +266,7 @@ func newTicketServiceResolveResult() interface{} {
 func escalateHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*ticket.TicketServiceEscalateArgs)
 	realResult := result.(*ticket.TicketServiceEscalateResult)
-	success, err := handler.(ticket.TicketService).Escalate(ctx, realArg.Id, realArg.Note)
+	success, err := handler.(ticket.TicketService).Escalate(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -290,7 +290,7 @@ func newTicketServiceEscalateResult() interface{} {
 func reopenHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*ticket.TicketServiceReopenArgs)
 	realResult := result.(*ticket.TicketServiceReopenResult)
-	success, err := handler.(ticket.TicketService).Reopen(ctx, realArg.Id, realArg.Note)
+	success, err := handler.(ticket.TicketService).Reopen(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -314,7 +314,7 @@ func newTicketServiceReopenResult() interface{} {
 func getCyclesHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*ticket.TicketServiceGetCyclesArgs)
 	realResult := result.(*ticket.TicketServiceGetCyclesResult)
-	success, err := handler.(ticket.TicketService).GetCycles(ctx, realArg.Id)
+	success, err := handler.(ticket.TicketService).GetCycles(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -338,7 +338,7 @@ func newTicketServiceGetCyclesResult() interface{} {
 func getEventsHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
 	realArg := arg.(*ticket.TicketServiceGetEventsArgs)
 	realResult := result.(*ticket.TicketServiceGetEventsResult)
-	success, err := handler.(ticket.TicketService).GetEvents(ctx, realArg.Id)
+	success, err := handler.(ticket.TicketService).GetEvents(ctx, realArg.Req)
 	if err != nil {
 		switch v := err.(type) {
 		case *common.ServiceError:
@@ -369,11 +369,9 @@ func newServiceClient(c client.Client) *kClient {
 	}
 }
 
-func (p *kClient) CreateTicket(ctx context.Context, title string, desc string, note string) (r *common.Ticket, err error) {
+func (p *kClient) CreateTicket(ctx context.Context, req *ticket.CreateTicketRequest) (r *ticket.TicketResponse, err error) {
 	var _args ticket.TicketServiceCreateTicketArgs
-	_args.Title = title
-	_args.Desc = desc
-	_args.Note = note
+	_args.Req = req
 	var _result ticket.TicketServiceCreateTicketResult
 	if err = p.c.Call(ctx, "CreateTicket", &_args, &_result); err != nil {
 		return
@@ -385,9 +383,9 @@ func (p *kClient) CreateTicket(ctx context.Context, title string, desc string, n
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) GetTicket(ctx context.Context, id string) (r *common.Ticket, err error) {
+func (p *kClient) GetTicket(ctx context.Context, req *ticket.GetTicketRequest) (r *ticket.TicketResponse, err error) {
 	var _args ticket.TicketServiceGetTicketArgs
-	_args.Id = id
+	_args.Req = req
 	var _result ticket.TicketServiceGetTicketResult
 	if err = p.c.Call(ctx, "GetTicket", &_args, &_result); err != nil {
 		return
@@ -399,8 +397,9 @@ func (p *kClient) GetTicket(ctx context.Context, id string) (r *common.Ticket, e
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) ListTickets(ctx context.Context) (r []*common.Ticket, err error) {
+func (p *kClient) ListTickets(ctx context.Context, req *ticket.ListTicketsRequest) (r *ticket.ListTicketsResponse, err error) {
 	var _args ticket.TicketServiceListTicketsArgs
+	_args.Req = req
 	var _result ticket.TicketServiceListTicketsResult
 	if err = p.c.Call(ctx, "ListTickets", &_args, &_result); err != nil {
 		return
@@ -412,10 +411,9 @@ func (p *kClient) ListTickets(ctx context.Context) (r []*common.Ticket, err erro
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) Assign(ctx context.Context, id string, note string) (r *common.Ticket, err error) {
+func (p *kClient) Assign(ctx context.Context, req *ticket.TicketActionRequest) (r *ticket.TicketResponse, err error) {
 	var _args ticket.TicketServiceAssignArgs
-	_args.Id = id
-	_args.Note = note
+	_args.Req = req
 	var _result ticket.TicketServiceAssignResult
 	if err = p.c.Call(ctx, "Assign", &_args, &_result); err != nil {
 		return
@@ -427,10 +425,9 @@ func (p *kClient) Assign(ctx context.Context, id string, note string) (r *common
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) Resolve(ctx context.Context, id string, note string) (r *common.Ticket, err error) {
+func (p *kClient) Resolve(ctx context.Context, req *ticket.TicketActionRequest) (r *ticket.TicketResponse, err error) {
 	var _args ticket.TicketServiceResolveArgs
-	_args.Id = id
-	_args.Note = note
+	_args.Req = req
 	var _result ticket.TicketServiceResolveResult
 	if err = p.c.Call(ctx, "Resolve", &_args, &_result); err != nil {
 		return
@@ -442,10 +439,9 @@ func (p *kClient) Resolve(ctx context.Context, id string, note string) (r *commo
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) Escalate(ctx context.Context, id string, note string) (r *common.Ticket, err error) {
+func (p *kClient) Escalate(ctx context.Context, req *ticket.TicketActionRequest) (r *ticket.TicketResponse, err error) {
 	var _args ticket.TicketServiceEscalateArgs
-	_args.Id = id
-	_args.Note = note
+	_args.Req = req
 	var _result ticket.TicketServiceEscalateResult
 	if err = p.c.Call(ctx, "Escalate", &_args, &_result); err != nil {
 		return
@@ -457,10 +453,9 @@ func (p *kClient) Escalate(ctx context.Context, id string, note string) (r *comm
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) Reopen(ctx context.Context, id string, note string) (r *common.Ticket, err error) {
+func (p *kClient) Reopen(ctx context.Context, req *ticket.TicketActionRequest) (r *ticket.TicketResponse, err error) {
 	var _args ticket.TicketServiceReopenArgs
-	_args.Id = id
-	_args.Note = note
+	_args.Req = req
 	var _result ticket.TicketServiceReopenResult
 	if err = p.c.Call(ctx, "Reopen", &_args, &_result); err != nil {
 		return
@@ -472,9 +467,9 @@ func (p *kClient) Reopen(ctx context.Context, id string, note string) (r *common
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) GetCycles(ctx context.Context, id string) (r []*common.TicketCycle, err error) {
+func (p *kClient) GetCycles(ctx context.Context, req *ticket.GetCyclesRequest) (r []*common.TicketCycle, err error) {
 	var _args ticket.TicketServiceGetCyclesArgs
-	_args.Id = id
+	_args.Req = req
 	var _result ticket.TicketServiceGetCyclesResult
 	if err = p.c.Call(ctx, "GetCycles", &_args, &_result); err != nil {
 		return
@@ -486,9 +481,9 @@ func (p *kClient) GetCycles(ctx context.Context, id string) (r []*common.TicketC
 	return _result.GetSuccess(), nil
 }
 
-func (p *kClient) GetEvents(ctx context.Context, id string) (r []*common.TicketEvent, err error) {
+func (p *kClient) GetEvents(ctx context.Context, req *ticket.GetEventsRequest) (r []*common.TicketEvent, err error) {
 	var _args ticket.TicketServiceGetEventsArgs
-	_args.Id = id
+	_args.Req = req
 	var _result ticket.TicketServiceGetEventsResult
 	if err = p.c.Call(ctx, "GetEvents", &_args, &_result); err != nil {
 		return

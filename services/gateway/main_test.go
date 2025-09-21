@@ -21,11 +21,11 @@ import (
 )
 
 const (
-	contentTypeJSON      = "application/json"
-	headerContentType    = "Content-Type"
-	errServerNotReadyFmt = "server not ready at %s"
-	docsPath             = "/v1/docs"
-	ticketPrefix         = "/v1/tickets/"
+	contentTypeJSON       = "application/json"
+	headerContentTypeTest = "Content-Type"
+	errServerNotReadyFmt  = "server not ready at %s"
+	docsPath              = "/v1/docs"
+	ticketPrefix          = "/v1/tickets/"
 )
 
 type ticketResp struct {

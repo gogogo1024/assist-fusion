@@ -13,9 +13,9 @@ run = "go test ./..."
 [tasks.lint]
 run = "golangci-lint run"
 
-[tasks.run-ticket]
+[tasks.run-gateway]
 env = { HTTP_ADDR = ":8081" }
-run = "go run ./services/ticket-svc/main.go"
+run = "go run ./services/gateway"
 
 [tasks.es-up]
 run = "docker compose -f docker/es/docker-compose.yml up -d"
@@ -23,15 +23,16 @@ run = "docker compose -f docker/es/docker-compose.yml up -d"
 [tasks.es-down]
 run = "docker compose -f docker/es/docker-compose.yml down -v"
 
-[tasks.run-ticket-es]
-env = { HTTP_ADDR = ":8081", KB_BACKEND = "es", ES_ADDRS = "http://localhost:9200", ES_INDEX = "kb_docs" }
-run = "go run ./services/ticket-svc/main.go"
+[tasks.run-gateway-es]
+env = { HTTP_ADDR = ":8081", KB_BACKEND = "es", ES_ADDRS = "http://localhost:9200", ES_INDEX = "kb_docs", FEATURE_RPC = "true", TICKET_RPC_ADDR = "127.0.0.1:8201", KB_RPC_ADDR = "127.0.0.1:8202", AI_RPC_ADDR = "127.0.0.1:8203" }
+run = "go run ./services/gateway"
 
-# 预留：知识库与AI服务任务，创建对应服务后可解注
-# [tasks.run-kb]
-# env = { HTTP_ADDR = ":8082" }
-# run = "go run ./services/kb-svc/main.go"
+# RPC 独立运行（可用于本地联调）
+[tasks.run-ticket-rpc]
+run = "go run ./rpc/ticket"
 
-# [tasks.run-ai]
-# env = { HTTP_ADDR = ":8083" }
-# run = "go run ./services/ai-svc/main.go"
+[tasks.run-kb-rpc]
+run = "go run ./rpc/kb"
+
+[tasks.run-ai-rpc]
+run = "go run ./rpc/ai"

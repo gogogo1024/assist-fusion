@@ -8,8 +8,169 @@ import (
 	"github.com/gogogo1024/assist-fusion/kitex_gen/common"
 )
 
+type ChatMessage struct {
+	Role    string `thrift:"role,1" frugal:"1,default,string" json:"role"`
+	Content string `thrift:"content,2" frugal:"2,default,string" json:"content"`
+}
+
+func NewChatMessage() *ChatMessage {
+	return &ChatMessage{}
+}
+
+func (p *ChatMessage) InitDefault() {
+}
+
+func (p *ChatMessage) GetRole() (v string) {
+	return p.Role
+}
+
+func (p *ChatMessage) GetContent() (v string) {
+	return p.Content
+}
+func (p *ChatMessage) SetRole(val string) {
+	p.Role = val
+}
+func (p *ChatMessage) SetContent(val string) {
+	p.Content = val
+}
+
+func (p *ChatMessage) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("ChatMessage(%+v)", *p)
+}
+
+var fieldIDToName_ChatMessage = map[int16]string{
+	1: "role",
+	2: "content",
+}
+
+type ChatRequest struct {
+	Messages  []*ChatMessage `thrift:"messages,1" frugal:"1,default,list<ChatMessage>" json:"messages"`
+	Model     *string        `thrift:"model,2,optional" frugal:"2,optional,string" json:"model,omitempty"`
+	MaxTokens *int32         `thrift:"max_tokens,3,optional" frugal:"3,optional,i32" json:"max_tokens,omitempty"`
+}
+
+func NewChatRequest() *ChatRequest {
+	return &ChatRequest{}
+}
+
+func (p *ChatRequest) InitDefault() {
+}
+
+func (p *ChatRequest) GetMessages() (v []*ChatMessage) {
+	return p.Messages
+}
+
+var ChatRequest_Model_DEFAULT string
+
+func (p *ChatRequest) GetModel() (v string) {
+	if !p.IsSetModel() {
+		return ChatRequest_Model_DEFAULT
+	}
+	return *p.Model
+}
+
+var ChatRequest_MaxTokens_DEFAULT int32
+
+func (p *ChatRequest) GetMaxTokens() (v int32) {
+	if !p.IsSetMaxTokens() {
+		return ChatRequest_MaxTokens_DEFAULT
+	}
+	return *p.MaxTokens
+}
+func (p *ChatRequest) SetMessages(val []*ChatMessage) {
+	p.Messages = val
+}
+func (p *ChatRequest) SetModel(val *string) {
+	p.Model = val
+}
+func (p *ChatRequest) SetMaxTokens(val *int32) {
+	p.MaxTokens = val
+}
+
+func (p *ChatRequest) IsSetModel() bool {
+	return p.Model != nil
+}
+
+func (p *ChatRequest) IsSetMaxTokens() bool {
+	return p.MaxTokens != nil
+}
+
+func (p *ChatRequest) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("ChatRequest(%+v)", *p)
+}
+
+var fieldIDToName_ChatRequest = map[int16]string{
+	1: "messages",
+	2: "model",
+	3: "max_tokens",
+}
+
+type ChatResponse struct {
+	Message *ChatMessage           `thrift:"message,1" frugal:"1,default,ChatMessage" json:"message"`
+	Usage   *common.EmbeddingUsage `thrift:"usage,2,optional" frugal:"2,optional,common.EmbeddingUsage" json:"usage,omitempty"`
+}
+
+func NewChatResponse() *ChatResponse {
+	return &ChatResponse{}
+}
+
+func (p *ChatResponse) InitDefault() {
+}
+
+var ChatResponse_Message_DEFAULT *ChatMessage
+
+func (p *ChatResponse) GetMessage() (v *ChatMessage) {
+	if !p.IsSetMessage() {
+		return ChatResponse_Message_DEFAULT
+	}
+	return p.Message
+}
+
+var ChatResponse_Usage_DEFAULT *common.EmbeddingUsage
+
+func (p *ChatResponse) GetUsage() (v *common.EmbeddingUsage) {
+	if !p.IsSetUsage() {
+		return ChatResponse_Usage_DEFAULT
+	}
+	return p.Usage
+}
+func (p *ChatResponse) SetMessage(val *ChatMessage) {
+	p.Message = val
+}
+func (p *ChatResponse) SetUsage(val *common.EmbeddingUsage) {
+	p.Usage = val
+}
+
+func (p *ChatResponse) IsSetMessage() bool {
+	return p.Message != nil
+}
+
+func (p *ChatResponse) IsSetUsage() bool {
+	return p.Usage != nil
+}
+
+func (p *ChatResponse) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("ChatResponse(%+v)", *p)
+}
+
+var fieldIDToName_ChatResponse = map[int16]string{
+	1: "message",
+	2: "usage",
+}
+
 type AIService interface {
 	Embeddings(ctx context.Context, req *common.EmbeddingRequest) (r *common.EmbeddingResponse, err error)
+
+	Chat(ctx context.Context, req *ChatRequest) (r *ChatResponse, err error)
 }
 
 type AIServiceEmbeddingsArgs struct {
@@ -102,6 +263,100 @@ func (p *AIServiceEmbeddingsResult) String() string {
 }
 
 var fieldIDToName_AIServiceEmbeddingsResult = map[int16]string{
+	0: "success",
+	1: "err",
+}
+
+type AIServiceChatArgs struct {
+	Req *ChatRequest `thrift:"req,1" frugal:"1,default,ChatRequest" json:"req"`
+}
+
+func NewAIServiceChatArgs() *AIServiceChatArgs {
+	return &AIServiceChatArgs{}
+}
+
+func (p *AIServiceChatArgs) InitDefault() {
+}
+
+var AIServiceChatArgs_Req_DEFAULT *ChatRequest
+
+func (p *AIServiceChatArgs) GetReq() (v *ChatRequest) {
+	if !p.IsSetReq() {
+		return AIServiceChatArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *AIServiceChatArgs) SetReq(val *ChatRequest) {
+	p.Req = val
+}
+
+func (p *AIServiceChatArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *AIServiceChatArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("AIServiceChatArgs(%+v)", *p)
+}
+
+var fieldIDToName_AIServiceChatArgs = map[int16]string{
+	1: "req",
+}
+
+type AIServiceChatResult struct {
+	Success *ChatResponse        `thrift:"success,0,optional" frugal:"0,optional,ChatResponse" json:"success,omitempty"`
+	Err     *common.ServiceError `thrift:"err,1,optional" frugal:"1,optional,common.ServiceError" json:"err,omitempty"`
+}
+
+func NewAIServiceChatResult() *AIServiceChatResult {
+	return &AIServiceChatResult{}
+}
+
+func (p *AIServiceChatResult) InitDefault() {
+}
+
+var AIServiceChatResult_Success_DEFAULT *ChatResponse
+
+func (p *AIServiceChatResult) GetSuccess() (v *ChatResponse) {
+	if !p.IsSetSuccess() {
+		return AIServiceChatResult_Success_DEFAULT
+	}
+	return p.Success
+}
+
+var AIServiceChatResult_Err_DEFAULT *common.ServiceError
+
+func (p *AIServiceChatResult) GetErr() (v *common.ServiceError) {
+	if !p.IsSetErr() {
+		return AIServiceChatResult_Err_DEFAULT
+	}
+	return p.Err
+}
+func (p *AIServiceChatResult) SetSuccess(x interface{}) {
+	p.Success = x.(*ChatResponse)
+}
+func (p *AIServiceChatResult) SetErr(val *common.ServiceError) {
+	p.Err = val
+}
+
+func (p *AIServiceChatResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *AIServiceChatResult) IsSetErr() bool {
+	return p.Err != nil
+}
+
+func (p *AIServiceChatResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("AIServiceChatResult(%+v)", *p)
+}
+
+var fieldIDToName_AIServiceChatResult = map[int16]string{
 	0: "success",
 	1: "err",
 }

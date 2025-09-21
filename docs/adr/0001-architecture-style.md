@@ -4,11 +4,11 @@
 状态：已采纳（Accepted）
 
 ## 背景
-当前项目包含 ticket-svc（已存在）、计划中的 kb-svc、ai-svc，以及以 Airflow 驱动的数据流程。目标是尽快交付可用的客服+AI MVP，并在业务验证后逐步扩展。
+当前项目包含 gateway (HTTP 聚合) 以及独立的 rpc/ticket、rpc/kb、rpc/ai 服务，外加以 Airflow 驱动的离线/数据流程。目标是尽快交付可用的客服 + AI MVP，并在业务验证后逐步扩展。
 
 ## 决策
 采用“模块化单体（Modular Monolith）优先”的策略：
-- 在同一代码库/进程内以清晰的模块边界实现 ticket、kb、ai 能力；对外可先以单一二进制提供 HTTP 接口。
+- 在同一代码库内以清晰的模块边界实现 ticket、kb、ai 能力；早期可由 gateway 直接内联调用，后期通过 FEATURE_RPC=true 切换为 RPC 模式。
 - 通过内部接口抽象（例如 internal/... 包路径、接口定义、领域分层）保持未来可拆分性。
 - 当达到拆分阈值（见下）时，再按域或吞吐拆为独立微服务。
 

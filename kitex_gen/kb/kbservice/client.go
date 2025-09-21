@@ -7,15 +7,16 @@ import (
 	client "github.com/cloudwego/kitex/client"
 	callopt "github.com/cloudwego/kitex/client/callopt"
 	common "github.com/gogogo1024/assist-fusion/kitex_gen/common"
+	kb "github.com/gogogo1024/assist-fusion/kitex_gen/kb"
 )
 
 // Client is designed to provide IDL-compatible methods with call-option parameter for kitex framework.
 type Client interface {
-	AddDoc(ctx context.Context, title string, content string, callOptions ...callopt.Option) (r *common.KBDoc, err error)
-	UpdateDoc(ctx context.Context, id string, title string, content string, callOptions ...callopt.Option) (r *common.KBDoc, err error)
-	DeleteDoc(ctx context.Context, id string, callOptions ...callopt.Option) (err error)
-	Search(ctx context.Context, query string, limit int32, callOptions ...callopt.Option) (r []*common.SearchItem, err error)
-	Info(ctx context.Context, callOptions ...callopt.Option) (r map[string]string, err error)
+	AddDoc(ctx context.Context, req *kb.AddDocRequest, callOptions ...callopt.Option) (r *common.KBDoc, err error)
+	UpdateDoc(ctx context.Context, req *kb.UpdateDocRequest, callOptions ...callopt.Option) (r *common.KBDoc, err error)
+	DeleteDoc(ctx context.Context, req *kb.DeleteDocRequest, callOptions ...callopt.Option) (r *kb.DeleteDocResponse, err error)
+	Search(ctx context.Context, req *kb.SearchRequest, callOptions ...callopt.Option) (r *kb.SearchResponse, err error)
+	Info(ctx context.Context, callOptions ...callopt.Option) (r *kb.InfoResponse, err error)
 }
 
 // NewClient creates a client for the service defined in IDL.
@@ -47,27 +48,27 @@ type kKBServiceClient struct {
 	*kClient
 }
 
-func (p *kKBServiceClient) AddDoc(ctx context.Context, title string, content string, callOptions ...callopt.Option) (r *common.KBDoc, err error) {
+func (p *kKBServiceClient) AddDoc(ctx context.Context, req *kb.AddDocRequest, callOptions ...callopt.Option) (r *common.KBDoc, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.AddDoc(ctx, title, content)
+	return p.kClient.AddDoc(ctx, req)
 }
 
-func (p *kKBServiceClient) UpdateDoc(ctx context.Context, id string, title string, content string, callOptions ...callopt.Option) (r *common.KBDoc, err error) {
+func (p *kKBServiceClient) UpdateDoc(ctx context.Context, req *kb.UpdateDocRequest, callOptions ...callopt.Option) (r *common.KBDoc, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.UpdateDoc(ctx, id, title, content)
+	return p.kClient.UpdateDoc(ctx, req)
 }
 
-func (p *kKBServiceClient) DeleteDoc(ctx context.Context, id string, callOptions ...callopt.Option) (err error) {
+func (p *kKBServiceClient) DeleteDoc(ctx context.Context, req *kb.DeleteDocRequest, callOptions ...callopt.Option) (r *kb.DeleteDocResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.DeleteDoc(ctx, id)
+	return p.kClient.DeleteDoc(ctx, req)
 }
 
-func (p *kKBServiceClient) Search(ctx context.Context, query string, limit int32, callOptions ...callopt.Option) (r []*common.SearchItem, err error) {
+func (p *kKBServiceClient) Search(ctx context.Context, req *kb.SearchRequest, callOptions ...callopt.Option) (r *kb.SearchResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
-	return p.kClient.Search(ctx, query, limit)
+	return p.kClient.Search(ctx, req)
 }
 
-func (p *kKBServiceClient) Info(ctx context.Context, callOptions ...callopt.Option) (r map[string]string, err error) {
+func (p *kKBServiceClient) Info(ctx context.Context, callOptions ...callopt.Option) (r *kb.InfoResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
 	return p.kClient.Info(ctx)
 }

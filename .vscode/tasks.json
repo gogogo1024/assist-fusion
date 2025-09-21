@@ -1,62 +1,12 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "Go: test all",
-			"type": "shell",
-			"command": "go",
-			"args": [
-				"test",
-				"./..."
-			],
-			"problemMatcher": [
-				"$go"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Run ticket service",
-			"type": "shell",
-			"command": "go",
-			"args": [
-				"run",
-				"./services/ticket-svc/main.go"
-			],
-			"options": {
-				"env": {
-					"HTTP_ADDR": ":8081"
-				}
-			},
-			"isBackground": true,
-			"problemMatcher": []
-		},
-		{
-			"label": "run-gateway-ui",
-			"type": "shell",
-			"command": "PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8081 go run ./services/gateway",
-			"isBackground": true,
-			"group": "build"
-		},
-		{
-			"label": "run-gateway-ui-8083",
-			"type": "shell",
-			"command": "PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway",
-			"isBackground": true,
-			"group": "build"
-		},
-		{
-			"label": "run-gateway-ui-8084",
-			"type": "shell",
-			"command": "PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8084 go run ./services/gateway",
-			"isBackground": true,
-			"group": "build"
-		},
-		{
-			"label": "run-gateway-ui-8085",
-			"type": "shell",
-			"command": "PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8085 go run ./services/gateway",
-			"isBackground": true,
-			"group": "build"
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "test-all", "type": "shell", "command": "go", "args": ["test", "./..."], "problemMatcher": ["$go"], "options": {"env": {"PROM_DISABLE": "1"}} },
+  { "label": "run-ticket-rpc", "type": "shell", "command": "go run ./rpc/ticket", "problemMatcher": [], "isBackground": true },
+  { "label": "run-kb-rpc", "type": "shell", "command": "go run ./rpc/kb", "problemMatcher": [], "isBackground": true },
+  { "label": "run-ai-rpc", "type": "shell", "command": "go run ./rpc/ai", "problemMatcher": [], "isBackground": true },
+  { "label": "run-gateway", "type": "shell", "command": "go run ./services/gateway", "problemMatcher": [], "isBackground": true, "options": {"env": {"PROM_DISABLE": "1"}} },
+  { "label": "run-rpc-stack", "type": "shell", "command": "echo 'Use tasks: run-ticket-rpc run-kb-rpc run-ai-rpc then run-gateway with FEATURE_RPC=true'", "problemMatcher": [] },
+    { "label": "probe-inline", "type": "shell", "command": "go run ./cmd/rpc-probe --inline --timeout=8s", "problemMatcher": [], "options": {"env": {"PROM_DISABLE": "1"}} }
+  ]
 }

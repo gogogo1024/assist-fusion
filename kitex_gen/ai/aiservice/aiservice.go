@@ -21,6 +21,13 @@ var serviceMethods = map[string]kitex.MethodInfo{
 		false,
 		kitex.WithStreamingMode(kitex.StreamingNone),
 	),
+	"Chat": kitex.NewMethodInfo(
+		chatHandler,
+		newAIServiceChatArgs,
+		newAIServiceChatResult,
+		false,
+		kitex.WithStreamingMode(kitex.StreamingNone),
+	),
 }
 
 var (
@@ -111,6 +118,30 @@ func newAIServiceEmbeddingsResult() interface{} {
 	return ai.NewAIServiceEmbeddingsResult()
 }
 
+func chatHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
+	realArg := arg.(*ai.AIServiceChatArgs)
+	realResult := result.(*ai.AIServiceChatResult)
+	success, err := handler.(ai.AIService).Chat(ctx, realArg.Req)
+	if err != nil {
+		switch v := err.(type) {
+		case *common.ServiceError:
+			realResult.Err = v
+		default:
+			return err
+		}
+	} else {
+		realResult.Success = success
+	}
+	return nil
+}
+func newAIServiceChatArgs() interface{} {
+	return ai.NewAIServiceChatArgs()
+}
+
+func newAIServiceChatResult() interface{} {
+	return ai.NewAIServiceChatResult()
+}
+
 type kClient struct {
 	c client.Client
 }
@@ -126,6 +157,20 @@ func (p *kClient) Embeddings(ctx context.Context, req *common.EmbeddingRequest) 
 	_args.Req = req
 	var _result ai.AIServiceEmbeddingsResult
 	if err = p.c.Call(ctx, "Embeddings", &_args, &_result); err != nil {
+		return
+	}
+	switch {
+	case _result.Err != nil:
+		return r, _result.Err
+	}
+	return _result.GetSuccess(), nil
+}
+
+func (p *kClient) Chat(ctx context.Context, req *ai.ChatRequest) (r *ai.ChatResponse, err error) {
+	var _args ai.AIServiceChatArgs
+	_args.Req = req
+	var _result ai.AIServiceChatResult
+	if err = p.c.Call(ctx, "Chat", &_args, &_result); err != nil {
 		return
 	}
 	switch {
