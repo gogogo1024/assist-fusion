@@ -17,6 +17,22 @@ var (
 	KBSearchRequests atomic.Int64
 	KBSearchHits     atomic.Int64
 	AIEmbeddingCalls atomic.Int64
+
+	// AI provider granular counters
+	AIEmbeddingSuccessMock  atomic.Int64
+	AIEmbeddingFallbackMock atomic.Int64
+	AIEmbeddingError        atomic.Int64
+	AIChatSuccessMock       atomic.Int64
+	AIChatFallbackMock      atomic.Int64
+	AIChatError             atomic.Int64
+
+	// OpenAI specific (attempted provider stats)
+	AIEmbeddingSuccessOpenAI  atomic.Int64
+	AIEmbeddingFallbackOpenAI atomic.Int64
+	AIEmbeddingErrorOpenAI    atomic.Int64
+	AIChatSuccessOpenAI       atomic.Int64
+	AIChatFallbackOpenAI      atomic.Int64
+	AIChatErrorOpenAI         atomic.Int64
 )
 
 // Snapshot returns a simple Prometheus-like exposition text (temporary helper).
@@ -33,6 +49,26 @@ assistfusion_kb_doc_deleted_total %d
 assistfusion_kb_search_requests_total %d
 assistfusion_kb_search_hits_total %d
 assistfusion_ai_embedding_calls_total %d
+assistfusion_ai_embedding_success_mock_total %d
+assistfusion_ai_embedding_fallback_mock_total %d
+assistfusion_ai_embedding_error_total %d
+assistfusion_ai_chat_success_mock_total %d
+assistfusion_ai_chat_fallback_mock_total %d
+assistfusion_ai_chat_error_total %d
+assistfusion_ai_embedding_success_openai_total %d
+assistfusion_ai_embedding_fallback_openai_total %d
+assistfusion_ai_embedding_error_openai_total %d
+assistfusion_ai_chat_success_openai_total %d
+assistfusion_ai_chat_fallback_openai_total %d
+assistfusion_ai_chat_error_openai_total %d
+
+# pseudo-labeled series
+assistfusion_ai_provider_calls_total{provider="mock",result="success"} %d
+assistfusion_ai_provider_calls_total{provider="mock",result="fallback"} %d
+assistfusion_ai_provider_calls_total{provider="mock",result="error"} %d
+assistfusion_ai_provider_calls_total{provider="openai",result="success"} %d
+assistfusion_ai_provider_calls_total{provider="openai",result="fallback"} %d
+assistfusion_ai_provider_calls_total{provider="openai",result="error"} %d
 `,
 		TicketCreated.Load(),
 		TicketAssigned.Load(),
@@ -45,5 +81,24 @@ assistfusion_ai_embedding_calls_total %d
 		KBSearchRequests.Load(),
 		KBSearchHits.Load(),
 		AIEmbeddingCalls.Load(),
+		AIEmbeddingSuccessMock.Load(),
+		AIEmbeddingFallbackMock.Load(),
+		AIEmbeddingError.Load(),
+		AIChatSuccessMock.Load(),
+		AIChatFallbackMock.Load(),
+		AIChatError.Load(),
+		AIEmbeddingSuccessOpenAI.Load(),
+		AIEmbeddingFallbackOpenAI.Load(),
+		AIEmbeddingErrorOpenAI.Load(),
+		AIChatSuccessOpenAI.Load(),
+		AIChatFallbackOpenAI.Load(),
+		AIChatErrorOpenAI.Load(),
+		// labeled aggregation lines (reuse counters)
+		AIEmbeddingSuccessMock.Load(),
+		AIEmbeddingFallbackMock.Load(),
+		AIEmbeddingError.Load(),
+		AIEmbeddingSuccessOpenAI.Load(),
+		AIEmbeddingFallbackOpenAI.Load(),
+		AIEmbeddingErrorOpenAI.Load(),
 	)
 }

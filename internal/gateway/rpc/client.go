@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"os"
 	"sync"
 
 	"github.com/cloudwego/kitex/client"
@@ -23,21 +24,37 @@ var (
 // Init initializes kitex clients with consul resolver + tracing etc via clientsuite.
 func Init(cfg *common.Config) error {
 	once.Do(func() {
+		// Test / fallback mode: allow disabling consul resolver entirely and use direct host:ports.
+		// Triggered when DISABLE_CONSUL=1 (or empty registry address) so integration tests do not require a registry.
+		disableConsul := os.Getenv("DISABLE_CONSUL") == "1" || cfg.RegistryAddr == "" || cfg.RegistryAddr == "0"
+		if disableConsul {
+			TicketClient, initErr = ticketservice.NewClient("ticket", client.WithHostPorts(cfg.TicketRPCAddr))
+			if initErr != nil {
+				return
+			}
+			KBClient, initErr = kbservice.NewClient("kb", client.WithHostPorts(cfg.KBRPCAddr))
+			if initErr != nil {
+				return
+			}
+			AIClient, initErr = aiservice.NewClient("ai", client.WithHostPorts(cfg.AIRPCAddr))
+			return
+		}
+
 		suite := clientsuite.CommonGrpcClientSuite{
 			RegistryAddr:       cfg.RegistryAddr,
 			CurrentServiceName: "gateway", // service name for tracing peer info
 		}
 		opts := []client.Option{client.WithSuite(suite)}
 
-		TicketClient, initErr = ticketservice.NewClient("ticket-rpc", opts...)
+		TicketClient, initErr = ticketservice.NewClient("ticket", opts...)
 		if initErr != nil {
 			return
 		}
-		KBClient, initErr = kbservice.NewClient("kb-rpc", opts...)
+		KBClient, initErr = kbservice.NewClient("kb", opts...)
 		if initErr != nil {
 			return
 		}
-		AIClient, initErr = aiservice.NewClient("ai-rpc", opts...)
+		AIClient, initErr = aiservice.NewClient("ai", opts...)
 	})
 	return initErr
 }

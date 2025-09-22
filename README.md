@@ -1,12 +1,14 @@
 # AssistFusion 客服与知识检索平台（Go / CloudWeGo Hertz）
 
-> 统一单体（Modular Monolith）策略：当前阶段聚焦功能迭代与领域模型清晰度，避免过早拆分微服务。KB 支持内存与 Elasticsearch 双后端，默认尝试 IK 分词，失败回退 n-gram（最小 3）并带 edge_ngram 自动补全。 
+> 聚焦“客服工单 + 知识检索 + AI” 协同。当前形态为 **Gateway + 多 RPC 服务 (ticket / kb / ai)** 的模块化架构：Gateway 只做 HTTP 边界、参数与 JSON 归一、观测与聚合；业务逻辑全部落在下游 RPC。KB 支持内存与 Elasticsearch 双后端（通过 kb-rpc 服务封装），ES 优先 IK 分词，失败回退 n-gram（最小 3）并辅以 edge_ngram 自动补全。 
 
-## 项目结构（已完成 RPC 重构）
+> README 仅描述**当前状态**；历史演进、迁移与 IDL 字段变更说明在 `DEVELOPING.md`。
 
-> 历史说明：早期单体入口目录 `services/ticket-svc/` 已在重构后移除（由 `services/gateway/` 统一承担 HTTP 入口 + 聚合角色）。如需查看旧实现，可在 Git 历史中检索该路径。
+## 项目结构（Gateway + RPC 服务）
 
-- `services/gateway/`：统一 HTTP 入口（原单体入口演进）。当设置 `FEATURE_RPC=true` 时作为 BFF 转发到下游 Kitex RPC 服务，否则直接内嵌内存实现。
+> 历史：早期 “单体内联实现” 已废弃；Gateway 不再内嵌业务逻辑，仅调用下游 RPC。旧路径可在 Git 历史中搜索。
+
+- `services/gateway/`：统一 HTTP 入口（BFF）。始终经由下游 Kitex 服务（`FEATURE_RPC` 已无效，仅保留向后兼容）。
 - `rpc/`
   - `ticket/`
     - `main.go`：Ticket RPC 服务入口（package main）
@@ -54,7 +56,7 @@ mise run test
 | `GET /metrics` | Prometheus 指标（Hertz + 进程级） |
 | `GET /metrics/domain` | 域内指标细分（业务维度采样） |
 | `GET /v1/kb/info` | 知识库后端与 analyzer 模式（memory / es + ik|ngram|standard） |
-| `GET /v1/search?q=...&limit=10` | 知识检索，limit 默认 10，上限 50 |
+| `GET /v1/search?q=...&limit=10` | 知识检索（分页见“搜索分页语义”）；limit 默认 10，上限 50 |
 
 HTTP 响应统一附加：`X-AssistFusion-Project`, `X-AssistFusion-Version` 头部。
 
@@ -149,6 +151,33 @@ curl -X POST http://localhost:8081/v1/embeddings -d '{"texts":["客服是什么�
 
 兼容性：老的 JSON 与接口仍可正常工作，新字段均为可选并默认空值；事件与周期（cycles）模型保持不变，仅新增了 `closed_at/canceled_at` 快照字段。
 
+## 搜索分页语义
+
+示例：`GET /v1/search?q=安装&limit=5&offset=10`
+
+字段含义：
+- `limit`：单页请求条数，默认 10，最大 50；`limit<=0` 自动回退默认值。
+- `offset`：起始偏移量（从 0 开始）。
+- `total`：满足查询条件的**全部**可用结果总数（不是本页条数），当后端无法给出真实总数时保持 ≥ returned 的保守值（当前内存 / ES 都会返回真实值）。
+- `returned`：本页实际返回条数（与 JSON 中 `items` 数组长度一致）。
+- `next_offset`：仅当 `offset + returned < total` 时出现，表示下一页的 offset；客户端应使用该值进行翻页，不自行计算。
+
+客户端推荐逻辑（伪代码）：
+```
+offset := 0
+for {
+  r := GET /v1/search?q=...&limit=...&offset=offset
+  consume(r.items)
+  if r.next_offset == nil { break }
+  offset = *r.next_offset
+}
+```
+
+为什么采用 `next_offset`（而非 page / cursor）：
+1. 简单：与常规 offset 语义一致，易于调试。
+2. 避免客户端重复计算：下游可根据内部裁剪或去重逻辑调整下一页起点。
+3. 保持向后兼容：缺省未返回该字段的旧版本响应仍然可被现有客户端视为“无更多”。
+
 ## 前端演示界面（/ui）
 
 内置了一个极简前端用于演示整个业务流程（工单 + 知识库），通过 go:embed 打包在 `services/gateway/public/` 下，随网关进程一起提供静态资源。
@@ -209,14 +238,40 @@ PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway
 | 变量 | 用途 | 示例 |
 |------|------|------|
 | `HTTP_ADDR` | 服务监听地址 | `:8081` |
-| `KB_BACKEND` | 知识库后端选择 | `memory` / `es` |
+| `KB_BACKEND` | 知识库后端选择（kb-rpc 服务内部） | `memory` / `es` |
 | `ES_ADDRS` | ES 地址（逗号分隔） | `http://localhost:9200` |
 | `ES_INDEX` | ES 索引名 | `kb_docs` |
 | `ES_USERNAME` / `ES_PASSWORD` | 安全集群认证 | *(可选)* |
 | `AI_PROVIDER` | AI Provider 选择 | `mock` (默认) |
 | `AI_API_KEY` | Provider Key | *(可选)* |
 
-未配置 DSN / ES 时自动回退内存实现。
+未配置 ES 时 KB 回退内存实现（依然通过 kb-rpc 服务访问，不再在 Gateway 内联）。
+
+## Go 代码调用示例（Kitex 客户端）
+
+```go
+package main
+
+import (
+  "context"
+  "fmt"
+  kbsvc "github.com/gogogo1024/assist-fusion/kitex_gen/kb/kbservice"
+  kbt "github.com/gogogo1024/assist-fusion/kitex_gen/kb"
+)
+
+func main() {
+  cli, err := kbsvc.NewClient("kb-rpc") // 默认从服务发现（或直连配置）获取地址
+  if err != nil { panic(err) }
+  resp, err := cli.Search(context.Background(), &kbt.SearchRequest{Q: "安装", Limit: 5})
+  if err != nil { panic(err) }
+  // resp.Items: []*kb.Doc  | resp.Total: *int32 (可为空) | resp.Returned | resp.NextOffset
+  total := int32(resp.Returned)
+  if resp.Total != nil { total = *resp.Total }
+  fmt.Printf("got %d/%d items next_offset=%v\n", resp.Returned, total, resp.NextOffset)
+}
+```
+
+> 提示：`resp.Total` 为指针（optional 字段），需要判空；`NextOffset` 同理。
 
 ## 依赖（当前精简集）
 core: cloudwego/hertz, google/uuid, stretchr/testify

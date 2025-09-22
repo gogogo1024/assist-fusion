@@ -5,6 +5,7 @@ package kb
 import (
 	"context"
 	"fmt"
+
 	"github.com/gogogo1024/assist-fusion/kitex_gen/common"
 )
 
@@ -292,6 +293,7 @@ type SearchResponse struct {
 	Items      []*common.SearchItem `thrift:"items,1" frugal:"1,default,list<common.SearchItem>" json:"items"`
 	Returned   int32                `thrift:"returned,2" frugal:"2,default,i32" json:"returned"`
 	NextOffset *int32               `thrift:"next_offset,3,optional" frugal:"3,optional,i32" json:"next_offset,omitempty"`
+	Total      *int32               `thrift:"total,4,optional" frugal:"4,optional,i32" json:"total,omitempty"`
 }
 
 func NewSearchResponse() *SearchResponse {
@@ -317,6 +319,15 @@ func (p *SearchResponse) GetNextOffset() (v int32) {
 	}
 	return *p.NextOffset
 }
+
+var SearchResponse_Total_DEFAULT int32
+
+func (p *SearchResponse) GetTotal() (v int32) {
+	if !p.IsSetTotal() {
+		return SearchResponse_Total_DEFAULT
+	}
+	return *p.Total
+}
 func (p *SearchResponse) SetItems(val []*common.SearchItem) {
 	p.Items = val
 }
@@ -326,10 +337,12 @@ func (p *SearchResponse) SetReturned(val int32) {
 func (p *SearchResponse) SetNextOffset(val *int32) {
 	p.NextOffset = val
 }
+func (p *SearchResponse) SetTotal(val *int32) { p.Total = val }
 
 func (p *SearchResponse) IsSetNextOffset() bool {
 	return p.NextOffset != nil
 }
+func (p *SearchResponse) IsSetTotal() bool { return p.Total != nil }
 
 func (p *SearchResponse) String() string {
 	if p == nil {
@@ -342,6 +355,7 @@ var fieldIDToName_SearchResponse = map[int16]string{
 	1: "items",
 	2: "returned",
 	3: "next_offset",
+	4: "total",
 }
 
 type InfoResponse struct {

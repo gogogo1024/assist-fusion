@@ -145,6 +145,10 @@ func (s *TicketServiceImpl) Escalate(ctx context.Context, req *ticket.TicketActi
 	if t == nil {
 		return nil, &kcommon.ServiceError{Code: common.ErrCodeNotFound, Message: notFoundMsg}
 	}
+	// Business rule: cannot escalate after resolved
+	if t.Status == "resolved" {
+		return nil, &kcommon.ServiceError{Code: common.ErrCodeConflict, Message: "cannot escalate resolved ticket"}
+	}
 	note := ""
 	if req.Note != nil {
 		note = *req.Note
@@ -176,8 +180,12 @@ func (s *TicketServiceImpl) Reopen(ctx context.Context, req *ticket.TicketAction
 	}
 	now := time.Now().Unix()
 	t.ReopenedAt = now
-	t.Cycles = append(t.Cycles, common.TicketCycle{CreatedAt: now, Status: "reopened"})
+	// start a fresh cycle; status returns to created per integration test expectations
+	t.Cycles = append(t.Cycles, common.TicketCycle{CreatedAt: now, Status: "created"})
 	t.CurrentCycle = len(t.Cycles) - 1
+	t.Status = "created"
+	// reset transient timestamps while retaining historical ones in previous cycles
+	t.AssignedAt, t.ResolvedAt, t.EscalatedAt = 0, 0, 0
 	t.Events = append(t.Events, common.TicketEvent{Type: "reopened", At: now, Note: note})
 	_ = s.Repo.Update(ctx, t)
 	observability.TicketReopened.Add(1)

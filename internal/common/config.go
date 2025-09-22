@@ -21,8 +21,6 @@ type Config struct {
 	ESIndex    string
 	ESUsername string
 	ESPassword string
-	// Feature flags
-	FeatureRPC bool
 	// Downstream RPC addresses (host:port)
 	TicketRPCAddr string
 	KBRPCAddr     string
@@ -53,7 +51,6 @@ func LoadConfig() *Config {
 		ESIndex:       getenv("ES_INDEX", "kb_docs"),
 		ESUsername:    getenv("ES_USERNAME", ""),
 		ESPassword:    getenv("ES_PASSWORD", ""),
-		FeatureRPC:    strings.EqualFold(getenv("FEATURE_RPC", "off"), "on"),
 		TicketRPCAddr: getenv("TICKET_RPC_ADDR", "127.0.0.1:8201"),
 		KBRPCAddr:     getenv("KB_RPC_ADDR", "127.0.0.1:8202"),
 		AIRPCAddr:     getenv("AI_RPC_ADDR", "127.0.0.1:8203"),

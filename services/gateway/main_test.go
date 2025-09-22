@@ -14,18 +14,24 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/gogogo1024/assist-fusion/internal/common"
+	router "github.com/gogogo1024/assist-fusion/services/gateway/internal/router"
 )
 
 const (
 	contentTypeJSON       = "application/json"
 	headerContentTypeTest = "Content-Type"
 	errServerNotReadyFmt  = "server not ready at %s"
+	errExpect200Fmt       = "expected 200, got %d"
 	docsPath              = "/v1/docs"
 	ticketPrefix          = "/v1/tickets/"
+	// legacy alias retained for compatibility after route refactor
+	pathTickets  = router.PathTickets
+	searchURLFmt = "%s/v1/search?q=%s&limit=%d"
 )
 
 type ticketResp struct {
@@ -38,6 +44,28 @@ type ticketResp struct {
 	ResolvedAt  int64  `json:"resolved_at"`
 	EscalatedAt int64  `json:"escalated_at"`
 	ReopenedAt  int64  `json:"reopened_at"`
+}
+
+// --- shared RPC backend startup (once) ---
+var (
+	onceRPC    sync.Once
+	rpcStarted bool
+)
+
+func setupOnce(t *testing.T) {
+	onceRPC.Do(func() {
+		_, stops := startAllRPC(t)
+		// Set env vars so BuildServer picks direct host:port addresses (DISABLE_CONSUL already set in startAllRPC).
+		// startAllRPC already initialized rpc clients.
+		// We rely on global clients inside gateway adapter.
+		// Stop functions intentionally not deferred here to keep services for entire test package duration.
+		rpcStarted = true
+		_ = stops // ignored; not stopping within test run to avoid races
+	})
+	if !rpcStarted {
+		// should never happen; defensive
+		t.Fatalf("RPC backends not started")
+	}
 }
 
 // --- helpers ---
@@ -126,6 +154,8 @@ func doAction(t *testing.T, baseURL, id, action string) (ticketResp, int) {
 
 // ---- Tests (ports 18201-18211) ----
 func TestTicketAndAIFlow(t *testing.T) { // :18201
+	// Ensure shared RPC backends started once.
+	setupOnce(t)
 	base, stop := buildServer(t, ":18201")
 	defer stop()
 	b, _ := json.Marshal(map[string]string{"title": "test", "desc": "hello"})
@@ -156,6 +186,7 @@ func TestTicketAndAIFlow(t *testing.T) { // :18201
 }
 
 func TestKBFlow(t *testing.T) { // :18202
+	setupOnce(t)
 	base, stop := buildServer(t, ":18202")
 	defer stop()
 	doc := map[string]string{"title": "FAQ 客服", "content": "客服如何升级？请参考SLA"}
@@ -185,6 +216,7 @@ func TestKBFlow(t *testing.T) { // :18202
 }
 
 func TestTicketLifecycleNegativeAndList(t *testing.T) { // :18203
+	setupOnce(t)
 	base, stop := buildServer(t, ":18203")
 	defer stop()
 	b, _ := json.Marshal(map[string]string{"title": "lifecycle", "desc": "demo"})
@@ -210,6 +242,7 @@ func TestTicketLifecycleNegativeAndList(t *testing.T) { // :18203
 }
 
 func TestTicketLifecyclePositive(t *testing.T) { // :18204
+	setupOnce(t)
 	base, stop := buildServer(t, ":18204")
 	defer stop()
 	tk := createTicket(t, base, "positive", "lifecycle")
@@ -230,6 +263,7 @@ func TestTicketLifecyclePositive(t *testing.T) { // :18204
 }
 
 func TestTicketCyclesAPI(t *testing.T) { // :18205
+	setupOnce(t)
 	base, stop := buildServer(t, ":18205")
 	defer stop()
 	tk := createTicket(t, base, "cycles", "inspect")
@@ -264,6 +298,7 @@ func TestTicketCyclesAPI(t *testing.T) { // :18205
 }
 
 func TestTicketGetIncludesCycles(t *testing.T) { // :18206
+	setupOnce(t)
 	base, stop := buildServer(t, ":18206")
 	defer stop()
 	tk := createTicket(t, base, "detail", "view cycles")
@@ -276,7 +311,7 @@ func TestTicketGetIncludesCycles(t *testing.T) { // :18206
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", resp.StatusCode)
+		t.Fatalf(errExpect200Fmt, resp.StatusCode)
 	}
 	var detail struct {
 		ID           string `json:"id"`
@@ -299,6 +334,7 @@ func TestTicketGetIncludesCycles(t *testing.T) { // :18206
 }
 
 func TestTicketEventsAPI(t *testing.T) { // :18207
+	setupOnce(t)
 	base, stop := buildServer(t, ":18207")
 	defer stop()
 	b, _ := json.Marshal(map[string]string{"title": "events", "desc": "audit", "note": "new ticket"})
@@ -325,7 +361,7 @@ func TestTicketEventsAPI(t *testing.T) { // :18207
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", resp.StatusCode)
+		t.Fatalf(errExpect200Fmt, resp.StatusCode)
 	}
 	var out struct {
 		Events []struct {
@@ -343,6 +379,7 @@ func TestTicketEventsAPI(t *testing.T) { // :18207
 }
 
 func TestKBDocUpdateAndDelete(t *testing.T) { // :18208
+	setupOnce(t)
 	base, stop := buildServer(t, ":18208")
 	defer stop()
 	doc := map[string]string{"title": "更新删除测试", "content": "初始内容"}
@@ -370,7 +407,7 @@ func TestKBDocUpdateAndDelete(t *testing.T) { // :18208
 	io.Copy(io.Discard, resp2.Body)
 	resp2.Body.Close()
 	if resp2.StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", resp2.StatusCode)
+		t.Fatalf(errExpect200Fmt, resp2.StatusCode)
 	}
 	resp3, err := http.Get(base + "/v1/search?q=修改&limit=5")
 	if err != nil {
@@ -411,6 +448,7 @@ func TestKBDocUpdateAndDelete(t *testing.T) { // :18208
 }
 
 func TestKBInfoEndpoint(t *testing.T) { // :18209
+	setupOnce(t)
 	base, stop := buildServer(t, ":18209")
 	defer stop()
 	resp, err := http.Get(base + "/v1/kb/info")
@@ -421,7 +459,7 @@ func TestKBInfoEndpoint(t *testing.T) { // :18209
 	_ = json.NewDecoder(resp.Body).Decode(&info)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", resp.StatusCode)
+		t.Fatalf(errExpect200Fmt, resp.StatusCode)
 	}
 	if info["backend"] != "memory" {
 		t.Fatalf("expected backend=memory, got %#v", info)
@@ -429,9 +467,30 @@ func TestKBInfoEndpoint(t *testing.T) { // :18209
 }
 
 func TestKBSearchLimitEdgeCases(t *testing.T) { // :18210
+	setupOnce(t)
 	base, stop := buildServer(t, ":18210")
 	defer stop()
-	for i := 0; i < 60; i++ {
+	seedBulkDocs(t, base, 60)
+	items0, _ := searchItems(t, base, "bulk", 0)
+	if len(items0) == 0 || len(items0) > 10 {
+		t.Fatalf("limit=0 expected 1..10 items got %d", len(items0))
+	}
+	itemsMax, totalMax := searchItems(t, base, "bulk", 999)
+	if len(itemsMax) == 0 || len(itemsMax) > 50 {
+		t.Fatalf("limit=999 expected 1..50 items got %d", len(itemsMax))
+	}
+	if totalMax < len(itemsMax) {
+		t.Fatalf("total %d < returned %d", totalMax, len(itemsMax))
+	}
+	itemsSmall, totalSmall := searchItems(t, base, "bulk", 5)
+	if totalSmall < len(itemsSmall) {
+		t.Fatalf("(limit=5) total %d < returned %d", totalSmall, len(itemsSmall))
+	}
+}
+
+// --- local helpers for KB search limit edge cases ---
+func seedBulkDocs(t *testing.T, base string, count int) {
+	for i := 0; i < count; i++ {
 		doc := map[string]string{"title": fmt.Sprintf("bulk test %d", i), "content": "bulk test content"}
 		b, _ := json.Marshal(doc)
 		resp, err := http.Post(base+docsPath, contentTypeJSON, bytes.NewReader(b))
@@ -444,35 +503,21 @@ func TestKBSearchLimitEdgeCases(t *testing.T) { // :18210
 			t.Fatalf("seed doc %d status %d", i, resp.StatusCode)
 		}
 	}
-	resp0, err := http.Get(base + "/v1/search?q=bulk&limit=0")
+}
+
+func searchItems(t *testing.T, base, q string, limit int) ([]map[string]any, int) {
+	url := fmt.Sprintf("%s/v1/search?q=%s&limit=%d", base, q, limit)
+	resp, err := http.Get(url)
 	if err != nil {
-		t.Fatalf("limit=0 search err: %v", err)
+		t.Fatalf("search %s err: %v", url, err)
 	}
-	var s0 struct {
+	var out struct {
 		Items []map[string]any `json:"items"`
 		Total int              `json:"total"`
 	}
-	_ = json.NewDecoder(resp0.Body).Decode(&s0)
-	resp0.Body.Close()
-	if len(s0.Items) == 0 || len(s0.Items) > 10 {
-		t.Fatalf("limit=0 expected 1..10 items got %d", len(s0.Items))
-	}
-	respBig, err := http.Get(base + "/v1/search?q=bulk&limit=999")
-	if err != nil {
-		t.Fatalf("limit=999 search err: %v", err)
-	}
-	var sb struct {
-		Items []map[string]any `json:"items"`
-		Total int              `json:"total"`
-	}
-	_ = json.NewDecoder(respBig.Body).Decode(&sb)
-	respBig.Body.Close()
-	if len(sb.Items) == 0 || len(sb.Items) > 50 {
-		t.Fatalf("limit=999 expected 1..50 items got %d", len(sb.Items))
-	}
-	if sb.Total < len(sb.Items) {
-		t.Fatalf("total %d < returned %d", sb.Total, len(sb.Items))
-	}
+	_ = json.NewDecoder(resp.Body).Decode(&out)
+	resp.Body.Close()
+	return out.Items, out.Total
 }
 
 func TestSearchShortQueryAutocomplete(t *testing.T) { // :18211
@@ -520,6 +565,118 @@ func TestSearchShortQueryAutocomplete(t *testing.T) { // :18211
 	}
 	io.Copy(io.Discard, resp2.Body)
 	resp2.Body.Close()
+}
+
+func TestKBSearchPaginationNextOffset(t *testing.T) { // :18212
+	setupOnce(t)
+	base, stop := buildServer(t, ":18212")
+	defer stop()
+	// Seed a number of docs larger than one page; we don't assert exact total, only internal consistency.
+	seedDocs(t, base, 23, func(i int) (string, string) { return fmt.Sprintf("page test %02d", i), "paginations" })
+	walkPagesDynamicTotal(t, base, "page", 7)
+}
+
+// seedDocs seeds n docs using a title/content generator.
+func seedDocs(t *testing.T, base string, n int, gen func(i int) (title, content string)) {
+	for i := 0; i < n; i++ {
+		title, content := gen(i)
+		b, _ := json.Marshal(map[string]string{"title": title, "content": content})
+		resp, err := http.Post(base+docsPath, contentTypeJSON, bytes.NewReader(b))
+		if err != nil {
+			t.Fatalf("seed doc %d err: %v", i, err)
+		}
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusCreated {
+			t.Fatalf("seed doc %d status %d", i, resp.StatusCode)
+		}
+	}
+}
+
+// walkPages pages through search results asserting next_offset progression and total consistency.
+
+// walkPagesDynamicTotal pages through results without prior knowledge of total; it validates:
+// - total is constant across pages
+// - next_offset is cumulative returned count
+// - collected items == total on terminal page
+func walkPagesDynamicTotal(t *testing.T, base, q string, limit int) {
+	var totalObserved *int
+	var offset *int
+	collected := 0
+	for page := 0; ; page++ {
+		out := fetchPage(t, base, q, limit, offset)
+		assertReturned(t, page, out.Returned, len(out.Items))
+		totalObserved = assertTotalStable(t, totalObserved, out.Total)
+		collected += out.Returned
+		if out.NextOffset == nil {
+			if collected != *totalObserved {
+				t.Fatalf("collected %d final vs total %d", collected, *totalObserved)
+			}
+			return
+		}
+		assertNextOffset(t, page, *out.NextOffset, collected)
+		offset = out.NextOffset
+		if page > 16 {
+			t.Fatalf("too many pages")
+		}
+	}
+}
+
+// helper subset for complexity reduction
+func fetchPage(t *testing.T, base, q string, limit int, offset *int) struct {
+	Items      []map[string]any `json:"items"`
+	Total      int              `json:"total"`
+	Returned   int              `json:"returned"`
+	NextOffset *int             `json:"next_offset"`
+} {
+	url := fmt.Sprintf(searchURLFmt, base, q, limit)
+	if offset != nil {
+		url = fmt.Sprintf("%s&offset=%d", url, *offset)
+	}
+	var out struct {
+		Items      []map[string]any `json:"items"`
+		Total      int              `json:"total"`
+		Returned   int              `json:"returned"`
+		NextOffset *int             `json:"next_offset"`
+	}
+	getJSON(t, url, &out)
+	return out
+}
+
+func assertReturned(t *testing.T, page, returned, itemsLen int) {
+	if returned == 0 || returned != itemsLen {
+		t.Fatalf("page %d returned mismatch", page)
+	}
+}
+
+func assertTotalStable(t *testing.T, prev *int, current int) *int {
+	if prev == nil {
+		return &current
+	}
+	if *prev != current {
+		t.Fatalf("total changed %d -> %d", *prev, current)
+	}
+	return prev
+}
+
+func assertNextOffset(t *testing.T, page, got, expect int) {
+	if got != expect {
+		t.Fatalf("page %d expect next_offset=%d got %d", page, expect, got)
+	}
+}
+
+// firstPageTotal executes first page and returns returnedCount, totalReported.
+
+// getJSON performs a GET and decodes JSON into out.
+func getJSON(t *testing.T, url string, out any) {
+	resp, err := http.Get(url)
+	if err != nil {
+		t.Fatalf("GET %s err: %v", url, err)
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+		t.Fatalf("decode %s err: %v", url, err)
+	}
 }
 
 // End canonical gateway integration test suite.

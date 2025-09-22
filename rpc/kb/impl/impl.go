@@ -103,7 +103,8 @@ func (s *KBServiceImpl) Search(ctx context.Context, req *kbidl.SearchRequest) (*
 			next = &n
 		}
 	}
-	return &kbidl.SearchResponse{Items: out, Returned: int32(len(out)), NextOffset: next}, nil
+	total32 := int32(total)
+	return &kbidl.SearchResponse{Items: out, Returned: int32(len(out)), NextOffset: next, Total: &total32}, nil
 }
 
 func (s *KBServiceImpl) Info(ctx context.Context) (*kbidl.InfoResponse, error) {

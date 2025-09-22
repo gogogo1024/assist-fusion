@@ -45,3 +45,15 @@ fi
 
 echo "[verify-gen] OK: kitex_gen synchronized with IDL." >&2
 rm -f "$TMP_BEFORE" "$TMP_AFTER"
+
+# Guard: ensure manual patched Total field still exists in kb SearchResponse (optional i32 total)
+if ! grep -q "type SearchResponse struct" kitex_gen/kb/kb.go; then
+  echo "[verify-gen] ERROR: kitex_gen/kb/kb.go missing SearchResponse type (unexpected)" >&2
+  exit 5
+fi
+if ! grep -q "Total *\\*int32" kitex_gen/kb/kb.go; then
+  echo "[verify-gen] ERROR: SearchResponse.Total field missing (regeneration may have overwritten manual patch). Re-apply optional total field." >&2
+  exit 6
+fi
+
+echo "[verify-gen] Field guard: SearchResponse.Total present." >&2

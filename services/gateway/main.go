@@ -17,8 +17,6 @@ import (
 	"github.com/gogogo1024/assist-fusion/internal/common"
 	"github.com/gogogo1024/assist-fusion/internal/gateway"
 	rpcClients "github.com/gogogo1024/assist-fusion/internal/gateway/rpc"
-	"github.com/gogogo1024/assist-fusion/internal/kb"
-	esrepo "github.com/gogogo1024/assist-fusion/internal/kb/esrepo"
 	"github.com/gogogo1024/assist-fusion/internal/observability"
 	"github.com/gogogo1024/assist-fusion/kitex_gen/ai/aiservice"
 	"github.com/gogogo1024/assist-fusion/kitex_gen/kb/kbservice"
@@ -74,24 +72,9 @@ func isGoTest() bool {
 func BuildServer(cfg *common.Config) *server.Hertz {
 	common.InitLogger()
 	common.InitHertzLogger()
-	repo := common.NewMemoryTicketRepo()
-	var kbRepo kb.Repo
-	if cfg.KBBackend == "es" {
-		esCfg := esrepo.Config{Addresses: cfg.EsAddressesOrDefault(), Index: cfg.ESIndex, Username: cfg.ESUsername, Password: cfg.ESPassword}
-		r, err := esrepo.New(esCfg)
-		if err != nil {
-			log.Printf("failed to init ES repo, falling back to memory: %v", err)
-			kbRepo = kb.NewMemoryRepo()
-			esInitOK = false
-		} else {
-			kbRepo = r
-			esInitOK = true
-			esRepoInstance = r
-		}
-	} else {
-		kbRepo = kb.NewMemoryRepo()
-		esInitOK = true
-	}
+	// Local in-memory mode removed: gateway now always requires RPC backends.
+	// ES repository initialization for gateway health removed (responsibility moved to kb-rpc service). Keep flags neutral.
+	esInitOK = true
 
 	var h *server.Hertz
 	// allow disabling prometheus exporter via env PROM_DISABLE=1|true OR when under go test (to avoid port :9100 conflicts)
@@ -125,27 +108,18 @@ func BuildServer(cfg *common.Config) *server.Hertz {
 		return nil
 	}, cfg.KBBackend == "es", esInitOK)
 
-	if cfg.FeatureRPC {
-		ad, err := gateway.NewRPCAdapter(cfg)
-		if err != nil {
-			log.Printf("failed to init RPC adapter, fallback to local: %v", err)
-		} else {
-			log.Printf("gateway running in RPC mode")
-			kbShim := kbClientShim{c: rpcClients.KBClient}
-			aiShim := aiClientShim{c: rpcClients.AIClient}
-			router.RegisterKBRPC(h, kbShim)
-			router.RegisterAIRPC(h, aiShim)
-			router.RegisterUI(h, embeddedUIProviderInstance())
-			router.RegisterTicketRPC(h, ad.Ticket)
-			return h
-		}
+	ad, err := gateway.NewRPCAdapter(cfg)
+	if err != nil {
+		// Hard failure now (no fallback to removed local mode)
+		log.Fatalf("failed to init RPC adapter (local mode removed): %v", err)
 	}
-	log.Printf("gateway running in LOCAL mode")
-	// local routes
-	router.RegisterKBLocal(h, kbRepo)
-	router.RegisterAILocal(h)
+	log.Printf("gateway running in RPC mode (local mode removed)")
+	kbShim := kbClientShim{c: rpcClients.KBClient}
+	aiShim := aiClientShim{c: rpcClients.AIClient}
+	router.RegisterKBRPC(h, kbShim)
+	router.RegisterAIRPC(h, aiShim)
 	router.RegisterUI(h, embeddedUIProviderInstance())
-	router.RegisterTicketLocal(h, repo)
+	router.RegisterTicketRPC(h, ad.Ticket)
 	return h
 }
 

@@ -17,44 +17,44 @@ const (
 
 // Ticket domain model (simplified) kept for in-memory probe & RPC service.
 type Ticket struct {
-	ID           string
-	Title        string
-	Desc         string
-	Status       string
-	CreatedAt    int64
-	AssignedAt   int64
-	ResolvedAt   int64
-	EscalatedAt  int64
-	ReopenedAt   int64
-	ClosedAt     int64
-	CanceledAt   int64
-	Assignee     string
-	Priority     string
-	Customer     string
-	Category     string
-	Tags         []string
-	DueAt        int64
-	Cycles       []TicketCycle
-	CurrentCycle int
-	Events       []TicketEvent
+	ID           string        `json:"id"`
+	Title        string        `json:"title"`
+	Desc         string        `json:"desc"`
+	Status       string        `json:"status"`
+	CreatedAt    int64         `json:"created_at"`
+	AssignedAt   int64         `json:"assigned_at"`
+	ResolvedAt   int64         `json:"resolved_at"`
+	EscalatedAt  int64         `json:"escalated_at"`
+	ReopenedAt   int64         `json:"reopened_at"`
+	ClosedAt     int64         `json:"closed_at"`
+	CanceledAt   int64         `json:"canceled_at"`
+	Assignee     string        `json:"assignee"`
+	Priority     string        `json:"priority"`
+	Customer     string        `json:"customer"`
+	Category     string        `json:"category"`
+	Tags         []string      `json:"tags"`
+	DueAt        int64         `json:"due_at"`
+	Cycles       []TicketCycle `json:"cycles,omitempty"`
+	CurrentCycle int           `json:"current_cycle"`
+	Events       []TicketEvent `json:"events,omitempty"`
 }
 
 // TicketCycle stores timestamps of one lifecycle iteration.
 type TicketCycle struct {
-	CreatedAt   int64
-	AssignedAt  int64
-	ResolvedAt  int64
-	EscalatedAt int64
-	ClosedAt    int64
-	CanceledAt  int64
-	Status      string
+	CreatedAt   int64  `json:"created_at"`
+	AssignedAt  int64  `json:"assigned_at"`
+	ResolvedAt  int64  `json:"resolved_at"`
+	EscalatedAt int64  `json:"escalated_at"`
+	ClosedAt    int64  `json:"closed_at"`
+	CanceledAt  int64  `json:"canceled_at"`
+	Status      string `json:"status"`
 }
 
 // TicketEvent is an immutable audit entry.
 type TicketEvent struct {
-	Type string
-	At   int64
-	Note string
+	Type string `json:"type"`
+	At   int64  `json:"at"`
+	Note string `json:"note"`
 }
 
 // TicketRepo defines required persistence operations.

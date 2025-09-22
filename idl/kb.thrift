@@ -28,6 +28,7 @@ struct SearchResponse {
   1: list<common.SearchItem> items,
   2: i32 returned,
   3: optional i32 next_offset,
+  4: optional i32 total, // total matched (untruncated) count
 }
 
 struct InfoResponse { 1: map<string,string> stats }

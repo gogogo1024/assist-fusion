@@ -6,6 +6,7 @@ require (
 	github.com/cloudwego/gopkg v0.1.5
 	github.com/cloudwego/hertz v0.10.2
 	github.com/cloudwego/kitex v0.14.1
+	github.com/cloudwego/eino v0.5.0
 	github.com/elastic/go-elasticsearch/v8 v8.12.0
 	github.com/google/uuid v1.6.0
 	github.com/hertz-contrib/monitor-prometheus v0.1.3
