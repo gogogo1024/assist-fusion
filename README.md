@@ -185,11 +185,11 @@ for {
 运行与访问：
 
 ```sh
-# 1) 启动 gateway（内存 KB；禁用 Prometheus 9100 端口，避免端口冲突）
-PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8081 go run ./services/gateway
+# 1) 启动 gateway（内存 KB；Prometheus 9100 指标默认开启）
+KB_BACKEND=memory HTTP_ADDR=:8081 go run ./services/gateway
 
 # 如果 :8081 被占用，可换一个端口
-PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway
+KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway
 
 # 2) 浏览器访问
 # http://localhost:8081/ui  （或对应端口）
@@ -208,9 +208,8 @@ PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway
 - 浏览器语言：默认按浏览器语言自动检测，未命中时回退到中文。
 
 常见问题：
-- 端口占用：
-  - `:8081` 被占用 → 改用 `HTTP_ADDR=:8083`。
-  - Prometheus `:9100` 冲突 → 设置 `PROM_DISABLE=1`（演示/开发环境一般推荐关闭）。
+- 更换 HTTP 端口：`HTTP_ADDR=:8083`。
+- Prometheus 指标固定暴露于 `:9100/metrics`。
 - JSON 大小写：所有接口响应均为 `snake_case`（如 `created_at`、`current_cycle`）。
 - RPC 模式：设置 `FEATURE_RPC=true` 可切换为下游 Kitex 模式（需先启动对应 RPC 服务）。
 
@@ -242,8 +241,11 @@ PROM_DISABLE=1 KB_BACKEND=memory HTTP_ADDR=:8083 go run ./services/gateway
 | `ES_ADDRS` | ES 地址（逗号分隔） | `http://localhost:9200` |
 | `ES_INDEX` | ES 索引名 | `kb_docs` |
 | `ES_USERNAME` / `ES_PASSWORD` | 安全集群认证 | *(可选)* |
-| `AI_PROVIDER` | AI Provider 选择 | `mock` (默认) |
-| `AI_API_KEY` | Provider Key | *(可选)* |
+| `AI_PROVIDER` | AI Provider 选择 | `mock` (默认) / `openai` |
+| `OPENAI_API_KEY` | OpenAI Key（设置后才会使用真实 OpenAI，空则回退 mock） | *(可选)* |
+| `OPENAI_EMBED_MODEL` | OpenAI Embedding 模型 | `text-embedding-3-small` (默认) |
+| `OPENAI_CHAT_MODEL` | OpenAI Chat 模型 | `gpt-4o-mini` (默认) |
+| `OPENAI_BASE_URL` | OpenAI API Base（为空自动用 `https://api.openai.com/v1`） | *(可选)* |
 
 未配置 ES 时 KB 回退内存实现（依然通过 kb-rpc 服务访问，不再在 Gateway 内联）。
 

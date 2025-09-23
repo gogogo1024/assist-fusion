@@ -38,6 +38,8 @@ func registerKBDocCRUD(h *server.Hertz, cli kbcli.Client) {
 			return
 		}
 		observability.KBDocCreated.Add(1)
+		// async best-effort embedding upsert
+		go UpsertDocEmbedding(c, resp.Id, req.Title, req.Content)
 		ctx.JSON(http.StatusCreated, map[string]any{"id": resp.Id})
 	})
 
@@ -73,6 +75,7 @@ func registerKBDocCRUD(h *server.Hertz, cli kbcli.Client) {
 			return
 		}
 		observability.KBDocUpdated.Add(1)
+		go UpsertDocEmbedding(c, id, derefOr(patch.Title), derefOr(patch.Content))
 		ctx.JSON(http.StatusOK, map[string]any{"id": id})
 	})
 
@@ -87,6 +90,7 @@ func registerKBDocCRUD(h *server.Hertz, cli kbcli.Client) {
 			return
 		}
 		observability.KBDocDeleted.Add(1)
+		go DeleteDocEmbedding(id)
 		ctx.JSON(http.StatusNoContent, nil)
 	})
 }
@@ -149,4 +153,11 @@ func registerKBInfo(h *server.Hertz, cli kbcli.Client) {
 		}
 		ctx.JSON(http.StatusOK, body)
 	})
+}
+
+func derefOr(p *string) string {
+	if p != nil {
+		return *p
+	}
+	return ""
 }

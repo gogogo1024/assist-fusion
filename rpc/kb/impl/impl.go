@@ -11,9 +11,24 @@ import (
 )
 
 // KBServiceImpl implements the generated KBService interface using kb.Repo.
-type KBServiceImpl struct{ Repo kb.Repo }
+type KBServiceImpl struct {
+	Repo         kb.Repo
+	backend      string
+	analyzerMode string
+}
 
-func NewKBService(repo kb.Repo) *KBServiceImpl { return &KBServiceImpl{Repo: repo} }
+type Option func(*KBServiceImpl)
+
+func WithBackend(b string) Option      { return func(s *KBServiceImpl) { s.backend = b } }
+func WithAnalyzerMode(m string) Option { return func(s *KBServiceImpl) { s.analyzerMode = m } }
+
+func NewKBService(repo kb.Repo, opts ...Option) *KBServiceImpl {
+	s := &KBServiceImpl{Repo: repo, backend: "memory"}
+	for _, o := range opts {
+		o(s)
+	}
+	return s
+}
 
 const (
 	errMsgKBUnavailable = "kb backend unavailable"
@@ -108,5 +123,9 @@ func (s *KBServiceImpl) Search(ctx context.Context, req *kbidl.SearchRequest) (*
 }
 
 func (s *KBServiceImpl) Info(ctx context.Context) (*kbidl.InfoResponse, error) {
-	return &kbidl.InfoResponse{Stats: map[string]string{"backend": "memory"}}, nil
+	stats := map[string]string{"backend": s.backend}
+	if s.backend == "es" && s.analyzerMode != "" {
+		stats["analyzer_mode"] = s.analyzerMode
+	}
+	return &kbidl.InfoResponse{Stats: stats}, nil
 }

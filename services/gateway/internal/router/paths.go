@@ -15,9 +15,10 @@ const (
 	PathTicketCycles   = "/v1/tickets/:id/cycles"
 	PathTicketEvents   = "/v1/tickets/:id/events"
 
-	PathDocs       = "/v1/docs"
-	PathDocID      = "/v1/docs/:id"
-	PathSearch     = "/v1/search"
-	PathKBInfo     = "/v1/kb/info"
-	PathEmbeddings = "/v1/embeddings"
+	PathDocs         = "/v1/docs"
+	PathDocID        = "/v1/docs/:id"
+	PathSearch       = "/v1/search"
+	PathKBInfo       = "/v1/kb/info"
+	PathEmbeddings   = "/v1/embeddings"
+	PathVectorSearch = "/v1/search/vector"
 )

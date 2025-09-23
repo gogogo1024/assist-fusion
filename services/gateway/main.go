@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"flag"
 	"io/fs"
 	"log"
 	"net"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/cloudwego/hertz/pkg/app"
@@ -63,11 +61,6 @@ func getAddr(cfg *common.Config) string {
 	return ":8081"
 }
 
-// isGoTest returns true when running under `go test`.
-func isGoTest() bool {
-	return flag.Lookup("test.v") != nil
-}
-
 // BuildServer assembles the Hertz server with all routes for reuse in tests.
 func BuildServer(cfg *common.Config) *server.Hertz {
 	common.InitLogger()
@@ -77,15 +70,11 @@ func BuildServer(cfg *common.Config) *server.Hertz {
 	esInitOK = true
 
 	var h *server.Hertz
-	// allow disabling prometheus exporter via env PROM_DISABLE=1|true OR when under go test (to avoid port :9100 conflicts)
-	promDisabled := strings.EqualFold(os.Getenv("PROM_DISABLE"), "1") || strings.EqualFold(os.Getenv("PROM_DISABLE"), "true") || isGoTest()
-	if !promDisabled {
-		promOnce.Do(func() {
-			// create first server with tracer
-			h = server.Default(server.WithHostPorts(getAddr(cfg)), server.WithTracer(prom.NewServerTracer(":9100", "/metrics", prom.WithEnableGoCollector(true))))
-		})
-	}
-	if h == nil { // subsequent builds without adding tracer to avoid duplicate /metrics
+	promOnce.Do(func() {
+		// always enable prometheus exporter
+		h = server.Default(server.WithHostPorts(getAddr(cfg)), server.WithTracer(prom.NewServerTracer(":9100", "/metrics", prom.WithEnableGoCollector(true))))
+	})
+	if h == nil {
 		h = server.Default(server.WithHostPorts(getAddr(cfg)))
 	}
 	// (middlewares stripped during cleanup – placeholder retained)
@@ -118,6 +107,8 @@ func BuildServer(cfg *common.Config) *server.Hertz {
 	aiShim := aiClientShim{c: rpcClients.AIClient}
 	router.RegisterKBRPC(h, kbShim)
 	router.RegisterAIRPC(h, aiShim)
+	// enable vector search endpoint (best-effort; relies on AI embeddings)
+	router.EnableVectorSearch(h, rpcClients.AIClient)
 	router.RegisterUI(h, embeddedUIProviderInstance())
 	router.RegisterTicketRPC(h, ad.Ticket)
 	return h

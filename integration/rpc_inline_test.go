@@ -21,7 +21,7 @@ import (
 	ticketimpl "github.com/gogogo1024/assist-fusion/rpc/ticket/impl"
 )
 
-// NOTE: avoid race-prone freePort pattern by binding listeners first.
+// Inline RPC servers use :0 ephemeral ports (no explicit port conflict detection retained).
 
 func TestInlineRPCBasic(t *testing.T) {
 	const anyLoop = "127.0.0.1:0"

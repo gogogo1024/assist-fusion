@@ -1,17 +1,19 @@
 package chain
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	openaiembed "github.com/cloudwego/eino-ext/components/embedding/openai"
+	einoaclopenai "github.com/cloudwego/eino-ext/libs/acl/openai"
+	"github.com/cloudwego/eino/components/model"
+	"github.com/cloudwego/eino/schema"
+	baseai "github.com/gogogo1024/assist-fusion/internal/ai"
 )
 
 // EmbeddingChain defines minimal embedding ability.
@@ -35,52 +37,47 @@ type ChatMessage struct {
 
 // Provider names
 const (
-	ProviderMock      = "mock"
-	ProviderOpenAI    = "openai"
-	bearerPrefix      = "Bearer "
-	headerContentType = "Content-Type"
-	mimeJSON          = "application/json"
-	emptyContent      = "(empty)"
+	ProviderMock        = "mock"
+	ProviderOpenAI      = "openai"
+	emptyContent        = "(empty)"
+	errMissingOpenAIKey = "missing OPENAI_API_KEY"
 )
 
 // NewEmbeddingChain builds an EmbeddingChain using provider selection.
 func NewEmbeddingChain(provider string) EmbeddingChain {
-	// Eino flag only meaningful for openai provider currently.
-	if provider == ProviderOpenAI && useEino() {
-		if ec, err := newEinoEmbedding(); err == nil {
-			return ec
-		}
-		// fallthrough to legacy
-	}
-	switch provider {
-	case ProviderOpenAI:
-		if c, err := newOpenAIEmbedding(); err == nil {
-			return c
-		}
-		// silent fallback to mock (metrics handled at service layer)
-		return newMockEmbedding()
-	default:
-		return newMockEmbedding()
-	}
+	// Backward compatible wrapper: load env -> override provider arg -> delegate.
+	cfg := LoadAIConfigFromEnv()
+	cfg.Provider = provider
+	return NewEmbeddingChainFromConfig(cfg)
 }
 
 // NewChatChain builds a ChatChain using provider selection.
 func NewChatChain(provider string) ChatChain {
-	if provider == ProviderOpenAI && useEino() {
-		if cc, err := newEinoChat(); err == nil {
+	cfg := LoadAIConfigFromEnv()
+	cfg.Provider = provider
+	return NewChatChainFromConfig(cfg)
+}
+
+// NewEmbeddingChainFromConfig creates an EmbeddingChain using an explicit AIConfig (env-free for tests).
+func NewEmbeddingChainFromConfig(cfg AIConfig) EmbeddingChain {
+	if strings.ToLower(cfg.Provider) == ProviderOpenAI {
+		if ec, err := newEinoEmbeddingFromConfig(cfg.OpenAIKey, cfg.OpenAIEmbedModel, cfg.OpenAIBaseURL); err == nil {
+			return ec
+		}
+		return newMockEmbedding()
+	}
+	return newMockEmbedding()
+}
+
+// NewChatChainFromConfig creates a ChatChain using an explicit AIConfig (env-free for tests).
+func NewChatChainFromConfig(cfg AIConfig) ChatChain {
+	if strings.ToLower(cfg.Provider) == ProviderOpenAI {
+		if cc, err := newEinoChatFromConfig(cfg.OpenAIKey, cfg.OpenAIChatModel, cfg.OpenAIBaseURL); err == nil {
 			return cc
 		}
-		// fallback to legacy
-	}
-	switch provider {
-	case ProviderOpenAI:
-		if c, err := newOpenAIChat(); err == nil {
-			return c
-		}
-		return newMockChat()
-	default:
 		return newMockChat()
 	}
+	return newMockChat()
 }
 
 // DetectProvider decides provider from env.
@@ -94,8 +91,7 @@ func DetectProvider() string {
 	}
 }
 
-// useEino returns true when AI_USE_EINO=1 (string compare) enabling eino adapter path.
-func useEino() bool { return strings.TrimSpace(os.Getenv("AI_USE_EINO")) == "1" }
+// NOTE: Previously had AI_USE_EINO flag; now eino is mandatory first choice for openai.
 
 // --- Mock implementations (deterministic, lightweight) ---
 
@@ -107,20 +103,7 @@ func (m *mockEmbedding) Embed(ctx context.Context, texts []string, dim int) ([][
 	if len(texts) == 0 {
 		return nil, errors.New("no texts")
 	}
-	if dim <= 0 {
-		dim = 32
-	}
-	out := make([][]float64, len(texts))
-	for i, t := range texts {
-		h := sha256.Sum256([]byte(t))
-		vec := make([]float64, dim)
-		for d := 0; d < dim; d++ {
-			b := h[d%len(h)]
-			vec[d] = float64(int(b)%200-100) / 100.0
-		}
-		out[i] = vec
-	}
-	return out, nil
+	return baseai.MockEmbeddings(texts, dim), nil
 }
 
 func (m *mockEmbedding) Provider() string { return ProviderMock }
@@ -171,318 +154,191 @@ func truncate(s string, n int) string {
 	return s[:n]
 }
 
-// --- OpenAI adapter (real REST integration minimal) ---
+// (Legacy OpenAI HTTP implementation removed; eino-ext is now mandatory first & only real path.)
 
-type openAIEmbedding struct {
-	apiKey  string
-	model   string
-	timeout time.Duration
-	baseURL string
-	httpc   *http.Client
+// --- Eino real embedding adapter ---
+// Uses eino-ext OpenAI embedder. We keep a lightweight wrapper implementing our EmbeddingChain.
+
+type einoEmbedding struct {
+	apiKey   string
+	model    string
+	baseURL  string
+	embedder *openaiembed.Embedder
+	curDim   int // dimension configured in current embedder (0 means provider default)
 }
 
-func newOpenAIEmbedding() (EmbeddingChain, error) {
-	key := os.Getenv("OPENAI_API_KEY")
+// (Deprecated) old env-based constructor removed; use newEinoEmbeddingFromConfig via NewEmbeddingChainFromConfig.
+
+// newEinoEmbeddingFromConfig builds eino embedding using explicit params (test-friendly).
+func newEinoEmbeddingFromConfig(key, model, base string) (EmbeddingChain, error) {
 	if key == "" {
-		return nil, errors.New("missing OPENAI_API_KEY")
+		return nil, errors.New(errMissingOpenAIKey)
 	}
-	model := os.Getenv("OPENAI_EMBED_MODEL")
 	if model == "" {
 		model = "text-embedding-3-small"
 	}
-	base := strings.TrimRight(os.Getenv("OPENAI_BASE_URL"), "/")
-	if base == "" {
-		base = "https://api.openai.com/v1"
-	}
-	return &openAIEmbedding{apiKey: key, model: model, timeout: 15 * time.Second, baseURL: base, httpc: &http.Client{Timeout: 15 * time.Second}}, nil
-}
-
-func (o *openAIEmbedding) Provider() string { return ProviderOpenAI }
-
-type openAIEmbReq struct {
-	Model      string   `json:"model"`
-	Input      []string `json:"input"`
-	Dimensions *int     `json:"dimensions,omitempty"`
-}
-type openAIEmbResp struct {
-	Data []struct {
-		Embedding []float64 `json:"embedding"`
-	} `json:"data"`
-	Error *struct {
-		Message string `json:"message"`
-		Type    string `json:"type"`
-	} `json:"error"`
-}
-
-func (o *openAIEmbedding) Embed(ctx context.Context, texts []string, dim int) ([][]float64, error) {
-	if len(texts) == 0 {
-		return nil, errors.New("no texts")
-	}
-	reqBody := openAIEmbReq{Model: o.model, Input: texts}
-	if dim > 0 {
-		reqBody.Dimensions = &dim
-	}
-	b, _ := json.Marshal(reqBody)
-	url := o.baseURL + "/embeddings"
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))
+	// base may be empty => use provider default
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	emb, err := openaiembed.NewEmbedder(ctx, &openaiembed.EmbeddingConfig{
+		APIKey:  key,
+		Model:   model,
+		BaseURL: base,
+		Timeout: 15 * time.Second,
+	})
 	if err != nil {
 		return nil, err
 	}
-	httpReq.Header.Set("Authorization", bearerPrefix+o.apiKey)
-	httpReq.Header.Set(headerContentType, mimeJSON)
-	resp, err := o.httpc.Do(httpReq)
+	return &einoEmbedding{apiKey: key, model: model, baseURL: base, embedder: emb}, nil
+}
+
+func (e *einoEmbedding) ensureEmbedderWithDim(ctx context.Context, dim int) error {
+	if dim <= 0 || e.curDim == dim {
+		return nil
+	}
+	// recreate embedder with new dimension
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	emb, err := openaiembed.NewEmbedder(ctx, &openaiembed.EmbeddingConfig{
+		APIKey:     e.apiKey,
+		Model:      e.model,
+		BaseURL:    e.baseURL,
+		Timeout:    15 * time.Second,
+		Dimensions: &dim,
+	})
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer resp.Body.Close()
-	rb, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("openai embeddings http %d: %s", resp.StatusCode, truncate(string(rb), 180))
-	}
-	var parsed openAIEmbResp
-	if err := json.Unmarshal(rb, &parsed); err != nil {
-		return nil, fmt.Errorf("decode embeddings: %w", err)
-	}
-	if parsed.Error != nil {
-		return nil, fmt.Errorf("openai embeddings error: %s", parsed.Error.Message)
-	}
-	if len(parsed.Data) == 0 {
-		return nil, errors.New("empty embeddings data")
-	}
-	out := make([][]float64, len(parsed.Data))
-	for i, d := range parsed.Data {
-		out[i] = d.Embedding
-	}
-	// If user requested dim and provider returned larger, slice; if smaller, pad zeros.
-	if dim > 0 {
-		for i := range out {
-			if len(out[i]) > dim {
-				out[i] = out[i][:dim]
-			} else if len(out[i]) < dim {
-				padded := make([]float64, dim)
-				copy(padded, out[i])
-				out[i] = padded
-			}
-		}
-	}
-	return out, nil
-}
-
-type openAIChat struct {
-	apiKey  string
-	model   string
-	timeout time.Duration
-	baseURL string
-	httpc   *http.Client
-}
-
-func newOpenAIChat() (ChatChain, error) {
-	key := os.Getenv("OPENAI_API_KEY")
-	if key == "" {
-		return nil, errors.New("missing OPENAI_API_KEY")
-	}
-	model := os.Getenv("OPENAI_CHAT_MODEL")
-	if model == "" {
-		model = "gpt-4o-mini"
-	}
-	base := strings.TrimRight(os.Getenv("OPENAI_BASE_URL"), "/")
-	if base == "" {
-		base = "https://api.openai.com/v1"
-	}
-	return &openAIChat{apiKey: key, model: model, timeout: 30 * time.Second, baseURL: base, httpc: &http.Client{Timeout: 30 * time.Second}}, nil
-}
-
-func (o *openAIChat) Provider() string { return ProviderOpenAI }
-
-type openAIChatReq struct {
-	Model     string              `json:"model"`
-	Messages  []openAIChatMessage `json:"messages"`
-	MaxTokens *int                `json:"max_tokens,omitempty"`
-	Stream    bool                `json:"stream,omitempty"`
-}
-
-// --- Eino adapter stubs (Phase 1) ---
-// For now they simply delegate to existing OpenAI implementations; later can be replaced by real eino components.
-
-type einoEmbedding struct{ inner EmbeddingChain }
-
-func newEinoEmbedding() (EmbeddingChain, error) {
-	// Reuse openai embedding path; if fails propagate error so fallback applies.
-	c, err := newOpenAIEmbedding()
-	if err != nil { return nil, err }
-	return &einoEmbedding{inner: c}, nil
+	e.embedder = emb
+	e.curDim = dim
+	return nil
 }
 
 func (e *einoEmbedding) Embed(ctx context.Context, texts []string, dim int) ([][]float64, error) {
-	return e.inner.Embed(ctx, texts, dim)
+	if err := e.ensureEmbedderWithDim(ctx, dim); err != nil {
+		return nil, err
+	}
+	return e.embedder.EmbedStrings(ctx, texts)
 }
 func (e *einoEmbedding) Provider() string { return ProviderOpenAI }
 
-type einoChat struct{ inner ChatChain }
-
-func newEinoChat() (ChatChain, error) {
-	c, err := newOpenAIChat()
-	if err != nil { return nil, err }
-	return &einoChat{inner: c}, nil
+// --- Eino chat adapter (still legacy delegate; to be replaced with real eino-ext chat component) ---
+// --- Eino chat adapter using eino-ext OpenAI client ---
+type einoChat struct {
+	client *einoaclopenai.Client
+	model  string
 }
 
-func (e *einoChat) Chat(ctx context.Context, messages []ChatMessage, maxTokens int) (ChatMessage, error) {
-	return e.inner.Chat(ctx, messages, maxTokens)
+// (Deprecated) old env-based chat constructor removed; use newEinoChatFromConfig via NewChatChainFromConfig.
+
+// newEinoChatFromConfig builds eino chat using explicit params (test-friendly, no env reads).
+func newEinoChatFromConfig(key, modelName, base string) (ChatChain, error) {
+	if key == "" {
+		return nil, errors.New(errMissingOpenAIKey)
+	}
+	if modelName == "" {
+		modelName = "gpt-4o-mini"
+	}
+	base = strings.TrimRight(base, "/")
+	if base == "" { // ensure a sane default; some upstream client paths may not set http.Client if base empty
+		base = "https://api.openai.com/v1"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	cli, err := einoaclopenai.NewClient(ctx, &einoaclopenai.Config{APIKey: key, Model: modelName, BaseURL: base})
+	if err != nil {
+		return nil, err
+	}
+	return &einoChat{client: cli, model: modelName}, nil
 }
-func (e *einoChat) ChatStream(ctx context.Context, messages []ChatMessage, maxTokens int, onDelta func(string) bool) (ChatMessage, error) {
-	return e.inner.ChatStream(ctx, messages, maxTokens, onDelta)
-}
+
 func (e *einoChat) Provider() string { return ProviderOpenAI }
-type openAIChatMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-type openAIChatResp struct {
-	Choices []struct {
-		Message openAIChatMessage `json:"message"`
-	} `json:"choices"`
-	Error *struct {
-		Message string `json:"message"`
-	} `json:"error"`
-}
 
-func (o *openAIChat) Chat(ctx context.Context, messages []ChatMessage, maxTokens int) (ChatMessage, error) {
+func (e *einoChat) Chat(ctx context.Context, messages []ChatMessage, maxTokens int) (ret ChatMessage, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic in openai chat: %v", r)
+		}
+	}()
 	if len(messages) == 0 {
 		return ChatMessage{Role: "assistant", Content: emptyContent}, nil
 	}
-	ms := make([]openAIChatMessage, 0, len(messages))
-	for _, m := range messages {
-		ms = append(ms, openAIChatMessage(m))
-	}
-	reqPayload := openAIChatReq{Model: o.model, Messages: ms}
+	mm := toSchemaMessages(messages)
+	opts := []model.Option{}
 	if maxTokens > 0 {
-		reqPayload.MaxTokens = &maxTokens
+		opts = append(opts, model.WithMaxTokens(maxTokens))
 	}
-	b, _ := json.Marshal(reqPayload)
-	url := o.baseURL + "/chat/completions"
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))
-	if err != nil {
-		return ChatMessage{}, err
+	resp, genErr := e.client.Generate(ctx, mm, opts...)
+	if genErr != nil {
+		return ChatMessage{}, genErr
 	}
-	httpReq.Header.Set("Authorization", bearerPrefix+o.apiKey)
-	httpReq.Header.Set(headerContentType, mimeJSON)
-	resp, err := o.httpc.Do(httpReq)
-	if err != nil {
-		return ChatMessage{}, err
-	}
-	defer resp.Body.Close()
-	rb, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode != 200 {
-		return ChatMessage{}, fmt.Errorf("openai chat http %d: %s", resp.StatusCode, truncate(string(rb), 180))
-	}
-	var parsed openAIChatResp
-	if err := json.Unmarshal(rb, &parsed); err != nil {
-		return ChatMessage{}, fmt.Errorf("decode chat: %w", err)
-	}
-	if parsed.Error != nil {
-		return ChatMessage{}, fmt.Errorf("openai chat error: %s", parsed.Error.Message)
-	}
-	if len(parsed.Choices) == 0 {
-		return ChatMessage{}, errors.New("no chat choices")
-	}
-	c := parsed.Choices[0].Message
-	if c.Content == "" {
+	if resp == nil || resp.Content == "" {
 		return ChatMessage{}, errors.New("empty chat content")
 	}
-	return ChatMessage(c), nil
+	return ChatMessage{Role: string(resp.Role), Content: resp.Content}, nil
 }
 
-// ChatStream implements streaming chat completions using SSE style data: lines.
-func (o *openAIChat) ChatStream(ctx context.Context, messages []ChatMessage, maxTokens int, onDelta func(string) bool) (ChatMessage, error) {
-    if len(messages) == 0 { return ChatMessage{Role: "assistant", Content: "(empty)"}, nil }
-    httpReq, err := o.buildStreamRequest(ctx, messages, maxTokens)
-    if err != nil { return ChatMessage{}, err }
-    resp, err := o.httpc.Do(httpReq)
-    if err != nil { return ChatMessage{}, err }
-    defer resp.Body.Close()
-    if resp.StatusCode != 200 {
-        rb, _ := io.ReadAll(resp.Body)
-        return ChatMessage{}, fmt.Errorf("openai chat stream http %d: %s", resp.StatusCode, truncate(string(rb), 160))
-    }
-    return o.consumeStream(resp.Body, onDelta)
-}
-
-func (o *openAIChat) buildStreamRequest(ctx context.Context, messages []ChatMessage, maxTokens int) (*http.Request, error) {
-    ms := make([]openAIChatMessage, 0, len(messages))
-    for _, m := range messages { ms = append(ms, openAIChatMessage(m)) }
-    reqPayload := openAIChatReq{Model: o.model, Messages: ms, Stream: true}
-    if maxTokens > 0 { reqPayload.MaxTokens = &maxTokens }
-    b, _ := json.Marshal(reqPayload)
-    url := o.baseURL + "/chat/completions"
-    httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(b))
-    if err != nil { return nil, err }
-    httpReq.Header.Set("Authorization", bearerPrefix+o.apiKey)
-    httpReq.Header.Set(headerContentType, mimeJSON)
-    return httpReq, nil
-}
-
-func (o *openAIChat) consumeStream(body io.Reader, onDelta func(string) bool) (ChatMessage, error) {
-	var full strings.Builder
-	dec := newLineReader(body)
-	for {
-		line, eof, rerr := dec.ReadLine()
-		if rerr != nil { return ChatMessage{}, rerr }
-		stop := handleOpenAILine(line, eof, &full, onDelta)
-		if stop { break }
+func (e *einoChat) ChatStream(ctx context.Context, messages []ChatMessage, maxTokens int, onDelta func(string) bool) (ret ChatMessage, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic in openai chat stream: %v", r)
+		}
+	}()
+	if len(messages) == 0 {
+		return ChatMessage{Role: "assistant", Content: emptyContent}, nil
 	}
+	mm := toSchemaMessages(messages)
+	opts := buildModelOptions(maxTokens)
+	stream, sErr := e.client.Stream(ctx, mm, opts...)
+	if sErr != nil {
+		return ChatMessage{}, sErr
+	}
+	var full strings.Builder
+	consumeEinoStream(stream, &full, onDelta)
 	return ChatMessage{Role: "assistant", Content: full.String()}, nil
 }
 
-// handleOpenAILine processes a single SSE line, returns true if streaming should stop.
-func handleOpenAILine(line string, eof bool, full *strings.Builder, onDelta func(string) bool) bool {
-	if len(line) == 0 && eof { return true }
-	if !strings.HasPrefix(line, "data:") { return eof }
-	payload := strings.TrimSpace(strings.TrimPrefix(line, "data:"))
-	if payload == "[DONE]" { return true }
-	piece := parseOpenAIStreamChunk(payload)
-	if piece == "" { return eof }
-	full.WriteString(piece)
-	if onDelta != nil && !onDelta(piece) { return true }
-	return eof
+func buildModelOptions(maxTokens int) []model.Option {
+	if maxTokens > 0 {
+		return []model.Option{model.WithMaxTokens(maxTokens)}
+	}
+	return nil
 }
 
-func parseOpenAIStreamChunk(payload string) string {
-    var chunk struct { Choices []struct { Delta struct { Content string `json:"content"` } `json:"delta"` } `json:"choices"` }
-    if err := json.Unmarshal([]byte(payload), &chunk); err != nil { return "" }
-    if len(chunk.Choices) == 0 { return "" }
-    return chunk.Choices[0].Delta.Content
-}
-
-// lineReader reads lines from io.Reader (simple, not optimized for huge streams).
-type lineReader struct {
-	src io.Reader
-	buf []byte
-}
-
-func newLineReader(r io.Reader) *lineReader { return &lineReader{src: r, buf: make([]byte, 0, 4096)} }
-
-func (lr *lineReader) ReadLine() (string, bool, error) {
-	tmp := make([]byte, 512)
+func consumeEinoStream(stream *schema.StreamReader[*schema.Message], full *strings.Builder, onDelta func(string) bool) {
 	for {
-		if i := bytes.IndexByte(lr.buf, '\n'); i >= 0 {
-			line := string(lr.buf[:i])
-			lr.buf = lr.buf[i+1:]
-			return line, false, nil
-		}
-		n, err := lr.src.Read(tmp)
-		if n > 0 {
-			lr.buf = append(lr.buf, tmp[:n]...)
-		}
+		msg, err := stream.Recv()
 		if err != nil {
-			if errors.Is(err, io.EOF) {
-				if len(lr.buf) == 0 {
-					return "", true, nil
-				}
-				line := string(lr.buf)
-				lr.buf = lr.buf[:0]
-				return line, true, nil
+			if errors.Is(err, io.EOF) { // normal end
+				return
 			}
-			return "", false, err
+			return
+		}
+		if !appendEinoMessage(msg, full, onDelta) {
+			return
 		}
 	}
 }
+
+func appendEinoMessage(msg *schema.Message, full *strings.Builder, onDelta func(string) bool) bool {
+	if msg == nil || (msg.Content == "" && len(msg.ToolCalls) == 0) {
+		return true // nothing to do, keep streaming
+	}
+	piece := msg.Content
+	full.WriteString(piece)
+	if onDelta != nil && !onDelta(piece) {
+		return false
+	}
+	return true
+}
+
+func toSchemaMessages(in []ChatMessage) []*schema.Message {
+	out := make([]*schema.Message, 0, len(in))
+	for _, m := range in {
+		role := schema.RoleType(m.Role)
+		out = append(out, &schema.Message{Role: role, Content: m.Content})
+	}
+	return out
+}
+
+// (Legacy streaming SSE parsing removed.)

@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net"
-	"net/netip"
 	"os"
 	"syscall"
 	"time"
@@ -58,8 +56,8 @@ func envOr(key, def string) string {
 
 func main() {
 	var (
-		timeout    = flag.Duration("timeout", 10*time.Second, "overall timeout")
-		waitReady  = flag.Duration("wait-start", 4*time.Second, "max wait for inline servers ready")
+		timeout = flag.Duration("timeout", 10*time.Second, "overall timeout")
+		// wait-start flag removed along with readiness detection
 		withInline = flag.Bool("inline", false, "start servers inline instead of using existing ones (overrides START_INLINE env)")
 	)
 	flag.Parse()
@@ -76,14 +74,6 @@ func main() {
 		ticketAddr = startTicketServer()
 		kbAddr = startKBServer()
 		aiAddr = startAIServer()
-		// readiness loop: attempt tcp connect until success or deadline
-		addrs := []string{ticketAddr, kbAddr, aiAddr}
-		deadline := time.Now().Add(*waitReady)
-		for _, a := range addrs {
-			if err := waitPortReady(a, deadline); err != nil {
-				log.Fatalf("server %s not ready: %v", a, err)
-			}
-		}
 	}
 
 	log.Printf("Probe using ticket=%s kb=%s ai=%s inline=%v timeout=%s", ticketAddr, kbAddr, aiAddr, startInline, timeout.String())
@@ -136,21 +126,10 @@ func main() {
 }
 
 // --- inline server helpers ---
-// find a free TCP port by binding :0 then closing
-func freePort() string {
-	ln, err := net.Listen("tcp", ":0")
-	if err != nil {
-		log.Fatalf("grab free port: %v", err)
-	}
-	addr := ln.Addr().(*net.TCPAddr)
-	p := addr.Port
-	_ = ln.Close()
-	return fmt.Sprintf(":%d", p)
-}
 func startTicketServer() string {
 	repo := common.NewMemoryTicketRepo()
 	h := ticketimpl.NewTicketService(repo)
-	addr := freePort()
+	addr := ":8201"
 	svr := ticketservice.NewServer(h, server.WithServiceAddr(&net.TCPAddr{Port: mustPort(addr)}))
 	go func() { _ = svr.Run() }()
 	return normalizeLocal(addr)
@@ -158,14 +137,14 @@ func startTicketServer() string {
 func startKBServer() string {
 	repo := kbstore.NewMemoryRepo()
 	h := kbimpl.NewKBService(repo)
-	addr := freePort()
+	addr := ":8202"
 	svr := kbservice.NewServer(h, server.WithServiceAddr(&net.TCPAddr{Port: mustPort(addr)}))
 	go func() { _ = svr.Run() }()
 	return normalizeLocal(addr)
 }
 func startAIServer() string {
 	h := aiimpl.NewAIService()
-	addr := freePort()
+	addr := ":8203"
 	svr := aiservice.NewServer(h, server.WithServiceAddr(&net.TCPAddr{Port: mustPort(addr)}))
 	go func() { _ = svr.Run() }()
 	return normalizeLocal(addr)
@@ -182,34 +161,7 @@ func mustPort(addr string) int {
 func normalizeLocal(addr string) string { return "127.0.0.1" + addr }
 
 // waitPortReady tries to connect until success or deadline.
-func waitPortReady(addr string, deadline time.Time) error {
-	// Normalize addr (Kitex may output 127.0.0.1:X or [::]:X) we just try as-is.
-	for {
-		if time.Now().After(deadline) {
-			return errors.New("timeout waiting for " + addr)
-		}
-		// quick parse just to ensure format
-		if _, err := netip.ParseAddrPort(addr); err != nil {
-			// if parse fails, prepend 127.0.0.1 if only :port pattern
-			if addr[0] == ':' {
-				addr = "127.0.0.1" + addr
-			}
-		}
-		d := net.Dialer{Timeout: 120 * time.Millisecond}
-		c, err := d.Dial("tcp", addr)
-		if err == nil {
-			_ = c.Close()
-			return nil
-		}
-		// ignore temporary
-		if ne, ok := err.(interface{ Temporary() bool }); ok && ne.Temporary() {
-			time.Sleep(60 * time.Millisecond)
-			continue
-		}
-		// backoff small
-		time.Sleep(80 * time.Millisecond)
-	}
-}
+// waitPortReady removed (port readiness/ conflict detection eliminated)
 
 // graceful handling of SIGINT so inline servers exit cleanly
 func init() {
